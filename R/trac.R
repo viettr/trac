@@ -97,7 +97,10 @@ trac <- function(Z, y, A, X = NULL, fraclist = NULL, nlam = 20,
   }
 
   if (is.null(w)) w <- list(rep(1, t_size - 1))
-  if ((!is.null(w_meta)) & (!is.null(w)) & is.numeric(w)) w <- c(w, rep(1, p_x))
+  if ((!is.null(w_meta)) & (!is.null(w)) & is.numeric(w) &
+      (length(w) != t_size - 1)) {
+        w <- c(w, rep(1, p_x))
+      }
   if (is.numeric(w)) w <- list(w)
   if (!is.list(w)) stop("w must be a list.")
   if (any(lapply(w, length) != t_size - 1)) {
