@@ -15,10 +15,12 @@
 #' @export
 cv_trac <- function(fit, Z, y, A, X = NULL, folds = NULL, nfolds = 5,
                     summary_function = stats::median, stratified = FALSE) {
+  # check input
   n <- nrow(Z)
   p <- ncol(Z)
   if (!is.null(X) & !is.data.frame(X)) X <- data.frame(X)
   stopifnot(length(y) == n)
+  # create folds
   if (is.null(folds)) {
     if (stratified) {
       folds <- make_folds_stratified(n, nfolds, y)
@@ -36,6 +38,7 @@ cv_trac <- function(fit, Z, y, A, X = NULL, folds = NULL, nfolds = 5,
     errs <- matrix(NA, ncol(fit[[iw]]$beta), nfolds)
     for (i in seq(nfolds)) {
       cat("fold", i, fill = TRUE)
+      # add so code with old version works
       if(is.null(fit[[iw]]$method)) fit[[iw]]$method <- "regr"
       if(is.null(fit[[iw]]$w_meta)) fit[[iw]]$w_meta <- NULL
       if(is.null(fit[[iw]]$rho)) fit[[iw]]$rho <- 0
@@ -57,6 +60,7 @@ cv_trac <- function(fit, Z, y, A, X = NULL, folds = NULL, nfolds = 5,
         fit_folds[[i]] <- refit_trac(fit_folds[[i]], Z[-folds[[i]], ],
                                      y[-folds[[i]]], A)
       }
+      # calculate the cross-validation error
       if (fit[[iw]]$method == "regr" | is.null(fit[[iw]]$method)) {
         errs[, i] <- apply(
           (predict_trac(
@@ -76,6 +80,7 @@ cv_trac <- function(fit, Z, y, A, X = NULL, folds = NULL, nfolds = 5,
         errs[, i] <- colMeans(er)
       }
     }
+    # Error as mean
     m <- rowMeans(errs)
     se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
     ibest <- which.min(m)

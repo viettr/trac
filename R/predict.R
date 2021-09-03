@@ -25,6 +25,7 @@ predict_trac <- function(fit, new_Z, new_X = NULL,
   yhat <- list()
   for (iw in seq_along(fit)) {
     if (!is.null(new_X)) {
+      # get categorical and numerical input in order to transform them
       categorical_list <- get_categorical_variables(new_X)
       categorical <- categorical_list[["categorical"]]
       n_categorical <- categorical_list[["n_categorical"]]
