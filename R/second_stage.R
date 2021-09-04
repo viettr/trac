@@ -25,24 +25,27 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
                          method = c("regr", "classif"),
                          criterion = c("1se", "min"),
                          alpha = 0) {
-
+  # partial matching of the input
   criterion <- match.arg(criterion)
   method <- match.arg(method)
+  # if no selected components --> stop
   stopifnot(alpha >= 0)
-
+  # get the number of compositional inputs
   n_alphas_compositional <- ncol(A)
+  # get the betas of the compositional features
   pre_selected <- betas[1:n_alphas_compositional]
+  # if no names provided --> create new names
   if (is.null(names(pre_selected))) {
     names(pre_selected) <- paste0("gamma_", 1:length(pre_selected))
   }
-
+  # get the non zero components
   pre_selected_index <- abs(pre_selected) >= 1e-3
 
   if(length(pre_selected[pre_selected_index]) <= 2) {
     stop("Only two or less preselected variables are passed.
        Therefore using a second step doesn't make sense.")
   }
-
+  # if topk is specified take only the top k components
   if (!is.null(topk)) {
     if (!is.numeric(topk)) stop("Topk has to be numeric")
     if (topk <= 2) stop ("Minimum number of topk is 3")
@@ -67,7 +70,9 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
   Z_A <- as.matrix(Z %*% A)
   subtree_n <- colSums(as.matrix(A))
   Z_A <- t((1 / subtree_n) * t(Z_A))
+  # create all logratios
 #  Z_A <- scale(Z_A, center = TRUE, scale = FALSE)
+  # build pairs
   index <- expand.grid(which(pre_selected_index), which(pre_selected_index))
   index <- index[index$Var2 > index$Var1, ]
   # choose(length(pre_selected[pre_selected_index]), 2)
@@ -83,12 +88,12 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
   penalty_weight_comp <- penalty_weight_comp^alpha
   penalty_weight_comp <- 1 / penalty_weight_comp
 
-
+  # seperate name by ///
   index$log_name <- paste(index$variable1,
                           index$variable2, sep = "///")
   n_log_contrast <- nrow(index)
 
-
+  # actually build the logratios
   expanded_z <- matrix(0, nrow = n, ncol = n_log_contrast)
   colnames(expanded_z) <- index$log_name
 
@@ -97,7 +102,7 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
   }
   n_comp <- ncol(expanded_z)
 
-
+  # add non compositional covariates and transform them
   if (!is.null(X)) {
     categorical_list <- get_categorical_variables(X)
     categorical <- categorical_list[["categorical"]]
@@ -114,7 +119,7 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
     penalty_factor <- penalty_weight_comp
   }
 
-
+  # change the label for glmnet
   if (method == "classif") {
     if (!is.factor(y)) {
       y_new <- as.factor(y)
@@ -122,7 +127,7 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
       y_new <- y
     }
   }
-
+  # run glmnet with cross-validation
   if (method == "regr") {
     cv_glmnet <- glmnet::cv.glmnet(x = expanded_z, y = y_new, alpha = 1,
                                    nfolds = nfolds, standardize = TRUE,
@@ -134,7 +139,8 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
                                    family = "binomial", type.measure = "class",
                                    penalty.factor = penalty_factor)
   }
-
+  # select features based on one standard error rule or lambda that
+  # minimizes the error
   if (criterion == "1se") {
     log_ratios <- as.matrix(
       glmnet::coef.glmnet(cv_glmnet, s = "lambda.1se"))[, 1]
@@ -143,9 +149,7 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
     log_ratios <- as.matrix(
       glmnet::coef.glmnet(cv_glmnet, s = "lambda.min"))[, 1]
   }
-
-
-
+  # return results in list
   list(log_ratios = log_ratios[2:length(log_ratios)],
        beta0 = log_ratios[1],
        index = index,
@@ -168,14 +172,15 @@ second_stage <- function(Z, A, y, X = NULL, betas, topk = NULL, nfolds = 5,
 
 predict_second_stage <- function(new_Z, new_X = NULL, fit,
                                  output = c("raw", "probability", "class")) {
+  # partial matching for input
   output <- match.arg(output)
-
+  # create geometric mean
   A <- as.matrix(fit$A)
   Z_A <- as.matrix(new_Z %*% A)
   subtree_n <- colSums(A)
   Z_A <- t((1 / subtree_n) * t(Z_A))
   n <- nrow(Z_A)
-
+  # create logratios
   index <- fit$index
   n_log_contrast <- nrow(index)
 
@@ -185,6 +190,7 @@ predict_second_stage <- function(new_Z, new_X = NULL, fit,
   for (i in 1:n_log_contrast) {
     expanded_z[, i] <- Z_A[, index[i, "index1"]] - Z_A[, index[i, "index2"]]
   }
+  # add aditional covariates
   if (!is.null(new_X)) {
     categorical_list <- get_categorical_variables(new_X)
     categorical <- categorical_list[["categorical"]]
@@ -196,10 +202,10 @@ predict_second_stage <- function(new_Z, new_X = NULL, fit,
     expanded_z <- cbind(expanded_z, new_X)
     expanded_z <- as.matrix(expanded_z)
   }
-
+  # specify how to select lambda
   if (fit$criterion == "1se") s <- "lambda.1se"
   if (fit$criterion == "min") s <- "lambda.min"
-
+  # define different output possibilites for classification
   if (fit$method == "classif") {
     if (output == "raw") type <- "link"
     if (output == "probability") type <- "response"
@@ -207,15 +213,9 @@ predict_second_stage <- function(new_Z, new_X = NULL, fit,
   } else if (fit$method == "regr") {
     type <- "link"
   }
-
+  # make the prediction
   yhat <- glmnet:::predict.cv.glmnet(object = fit$cv_glmnet,
                                     newx = expanded_z, s = s, type = type)
-
+  # return prediction
   yhat
 }
-
-
-# betas <- fit[[1]]$alpha[, cvfit$cv[[1]]$i1se]
-# test <- second_stage(Z, A, y, betas, method = "classif")
-# predict_second_stage(new_Z = Z, fit = test, output = "class")
-# test$index
