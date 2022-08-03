@@ -26,6 +26,8 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
   cv <- list()
   fit_folds <- list() # save this to reuse by log-ratio's cv function
   errs <- matrix(NA, ncol(fit$beta), nfolds)
+  predicted_values <- matrix(NA, 0, ncol(fit[[iw]]$beta))
+
   for (i in seq(nfolds)) {
     cat("fold", i, fill = TRUE)
     # add for backward compatibility
@@ -65,6 +67,12 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
         c(y[folds[[i]]])
       errs[, i] <- colMeans(er)
     }
+
+    predicted_values <- rbind(predicted_values,
+                              predict_trac(
+                                fit_folds[[i]],
+                                Z[folds[[i]], ],
+                                additional_covariates[folds[[i]], ])[[1]])
   }
   m <- rowMeans(errs)
   se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
@@ -75,6 +83,8 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
              lambda_1se = fit$fraclist[i1se], i1se = i1se,
              fraclist = fit$fraclist,
              nonzeros = colSums(abs(fit$beta) > 1e-5),
-             fit_folds = fit_folds)
+             fit_folds = fit_folds,
+             predicted_values = predicted_values
+             )
   list(cv = cv, folds = folds)
 }

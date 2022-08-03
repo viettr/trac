@@ -38,6 +38,7 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
   for (iw in seq_along(fit)) {
     if (length(fit) > 1) cat("CV for weight sequence #", iw, fill = TRUE)
     errs <- matrix(NA, ncol(fit[[iw]]$beta), nfolds)
+    predicted_values <- matrix(NA, 0, ncol(fit[[iw]]$beta))
     for (i in seq(nfolds)) {
       cat("fold", i, fill = TRUE)
       # add for backward compatibility
@@ -85,6 +86,12 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
           c(y[folds[[i]]])
         errs[, i] <- colMeans(er)
       }
+
+      predicted_values <- rbind(predicted_values,
+                                predict_trac(
+        fit_folds[[i]],
+        Z[folds[[i]], ],
+        additional_covariates[folds[[i]], ])[[1]])
     }
     m <- rowMeans(errs)
     se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
@@ -96,7 +103,8 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
       lambda_1se = fit[[iw]]$fraclist[i1se], i1se = i1se,
       fraclist = fit[[iw]]$fraclist, w = fit[[iw]]$w,
       nonzeros = colSums(abs(fit[[iw]]$gamma) > 1e-5),
-      fit_folds = fit_folds
+      fit_folds = fit_folds,
+      predicted_values = predicted_values
     )
   }
   list(
