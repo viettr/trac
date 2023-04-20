@@ -74,18 +74,18 @@ fits a sparse model based on all possible log-ratios.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">second_stage</span><span class="op">(</span>
-  <span class="va">Z</span>,
-  A <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">y</span>,
-  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">betas</span>,
-  topk <span class="op">=</span> <span class="cn">NULL</span>,
-  nfolds <span class="op">=</span> <span class="fl">5</span>,
-  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"regr"</span>, <span class="st">"classif"</span><span class="op">)</span>,
-  criterion <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1se"</span>, <span class="st">"min"</span><span class="op">)</span>,
-  alpha <span class="op">=</span> <span class="fl">0</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">second_stage</span><span class="op">(</span></span>
+<span>  <span class="va">Z</span>,</span>
+<span>  A <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">betas</span>,</span>
+<span>  topk <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nfolds <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"regr"</span>, <span class="st">"classif"</span><span class="op">)</span>,</span>
+<span>  criterion <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1se"</span>, <span class="st">"min"</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,39 +93,60 @@ fits a sparse model based on all possible log-ratios.</p>
     <dl><dt>Z</dt>
 <dd><p>n by p matrix containing log(X) (see <code>Z</code> from
 <code><a href="trac.html">trac</a></code>)</p></dd>
+
+
 <dt>A</dt>
 <dd><p>p by (t_size-1) binary matrix giving tree structure (t_size is the
 total number of nodes and the -1 is because we do not include the root).
 Only needed for trac based models. (see <code>A</code> from <code><a href="trac.html">trac</a></code>).
 If A = NULL, a sparse-log contrast model is assumed.</p></dd>
+
+
 <dt>y</dt>
 <dd><p>n vector (response) (see <code>y</code> from <code><a href="trac.html">trac</a></code>)</p></dd>
+
+
 <dt>additional_covariates</dt>
 <dd><p>n by p' matrix containing additional covariates,
 (see <code>additional_covariates</code> from <code><a href="trac.html">trac</a></code>).
 Non-compositional components are currently not penalized by the lasso</p></dd>
+
+
 <dt>betas</dt>
 <dd><p>pre-screened coefficients
 (see output <code>gamma</code> from <code><a href="trac.html">trac</a></code> or
 output <code>beta</code> from <code><a href="sparse_log_contrast.html">sparse_log_contrast</a></code>)</p></dd>
+
+
 <dt>topk</dt>
 <dd><p>maximum number of pre-screened coefficients to consider.
 Default NULL.</p></dd>
+
+
 <dt>nfolds</dt>
 <dd><p>number of folds</p></dd>
+
+
 <dt>method</dt>
 <dd><p>string which estimation method to use should be "regr" or
 "classif"</p></dd>
+
+
 <dt>criterion</dt>
 <dd><p>which criterion should be used to select the coefficients
 "1se" or "min"</p></dd>
+
+
 <dt>alpha</dt>
 <dd><p>nudge the model to select on a higher or lower level of the
 tree. Only relevant for trac based models.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>list with: log_ratios: betas for log ratios; index: dataframe with
+    
+
+<p>list with: log_ratios: betas for log ratios; index: dataframe with
 index of the pre selected coefficients and the log ratio name; A: taxonomic
 tree information; method: regression or classification; cv_glmnet:
 output of glmnet, useful for prediction; criterion: which criterion to
@@ -150,7 +171,7 @@ be used to select lambda based on cv (cross validation)</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

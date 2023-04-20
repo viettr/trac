@@ -70,7 +70,7 @@ Note: assumes that there are NOT single quotes around the labels.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">tax_table_to_phylo</span><span class="op">(</span><span class="va">x</span>, data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tax_table_to_phylo</span><span class="op">(</span><span class="va">x</span>, data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -78,14 +78,21 @@ Note: assumes that there are NOT single quotes around the labels.</p>
     <dl><dt>x</dt>
 <dd><p>a right-side formula describing the taxonomic relationship:
     <code>~C1/C2/.../Cn</code>.</p></dd>
+
+
 <dt>data</dt>
 <dd><p>the data.frame where to look for the variables (default
     to user's workspace).</p></dd>
+
+
 <dt>collapse</dt>
 <dd><p>a logical value specifying whether to collapse single
     nodes in the returned tree (see details).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>further arguments to be passed from other methods.</p></dd>
+
 </dl></div>
     <div id="author">
     <h2>Author</h2>
@@ -104,7 +111,7 @@ Note: assumes that there are NOT single quotes around the labels.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

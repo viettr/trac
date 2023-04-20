@@ -20,3 +20,7 @@ BuildType: Package
 PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source
 PackageRoxygenize: rd,collate,namespace
+
+PythonType: conda
+PythonVersion: 3.9.12
+PythonPath: C:/Users/ru98wan/Anaconda3/envs/trac/python.exe

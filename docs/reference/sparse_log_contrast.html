@@ -68,59 +68,82 @@ in Python.  The optimization problem are</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">sparse_log_contrast</span><span class="op">(</span>
-  <span class="va">Z</span>,
-  <span class="va">y</span>,
-  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,
-  C <span class="op">=</span> <span class="cn">NULL</span>,
-  fraclist <span class="op">=</span> <span class="cn">NULL</span>,
-  nlam <span class="op">=</span> <span class="fl">20</span>,
-  min_frac <span class="op">=</span> <span class="fl">1e-04</span>,
-  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"regr"</span>, <span class="st">"classif"</span>, <span class="st">"classif_huber"</span><span class="op">)</span>,
-  w_additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,
-  intercept <span class="op">=</span> <span class="cn">TRUE</span>,
-  normalized <span class="op">=</span> <span class="cn">TRUE</span>,
-  rho <span class="op">=</span> <span class="fl">0</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sparse_log_contrast</span><span class="op">(</span></span>
+<span>  <span class="va">Z</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  C <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fraclist <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nlam <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  min_frac <span class="op">=</span> <span class="fl">1e-04</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"regr"</span>, <span class="st">"classif"</span>, <span class="st">"classif_huber"</span><span class="op">)</span>,</span>
+<span>  w_additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  intercept <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  normalized <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  rho <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>Z</dt>
 <dd><p>n by p matrix containing log(X)</p></dd>
+
+
 <dt>y</dt>
 <dd><p>n vector (response)</p></dd>
+
+
 <dt>additional_covariates</dt>
 <dd><p>n by p' matrix containing additional covariates
 / features</p></dd>
+
+
 <dt>C</dt>
 <dd><p>m by p matrix. Default is a row vector of ones.</p></dd>
+
+
 <dt>fraclist</dt>
 <dd><p>(optional) vector of tuning parameter multipliers.
 Should be in (0, 1].</p></dd>
+
+
 <dt>nlam</dt>
 <dd><p>number of tuning parameters (ignored if fraclist non-NULL)</p></dd>
+
+
 <dt>min_frac</dt>
 <dd><p>smallest value of tuning parameter multiplier (ignored if
 fraclist non-NULL)</p></dd>
+
+
 <dt>method</dt>
 <dd><p>string which estimation method to use should be in
 ("regr", "classif", "classif_huber")</p></dd>
+
+
 <dt>w_additional_covariates</dt>
 <dd><p>vector of positive weights of
 length ncol(additional_covariates) (default: all equal to 1).</p></dd>
+
+
 <dt>intercept</dt>
 <dd><p>only works for classification! Should the intercept be
 fitted. Default is TRUE, set to FALSE if the intercept should not be
 included</p></dd>
+
+
 <dt>normalized</dt>
 <dd><p>if <code>TRUE</code> normalize the additional covariates.
 In this case the calculation for each covariate / feature:
 (X-X_mean) / ||X||_2
 The weights will be transformed back to the original scale.</p></dd>
+
+
 <dt>rho</dt>
 <dd><p>value for huberized classification loss.
 Default = 0.0.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -149,7 +172,7 @@ of lamda_max (which is the smallest value for which beta is nonzero).</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

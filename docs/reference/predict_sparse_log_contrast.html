@@ -66,32 +66,41 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">predict_sparse_log_contrast</span><span class="op">(</span>
-  <span class="va">fit</span>,
-  <span class="va">new_Z</span>,
-  new_additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,
-  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"raw"</span>, <span class="st">"probability"</span>, <span class="st">"class"</span><span class="op">)</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">predict_sparse_log_contrast</span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  <span class="va">new_Z</span>,</span>
+<span>  new_additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"raw"</span>, <span class="st">"probability"</span>, <span class="st">"class"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>fit</dt>
 <dd><p>output of the function <code><a href="sparse_log_contrast.html">sparse_log_contrast</a></code></p></dd>
+
+
 <dt>new_Z</dt>
 <dd><p>a new data matrix (see <code>Z</code> from
 <code><a href="sparse_log_contrast.html">sparse_log_contrast</a></code>)</p></dd>
+
+
 <dt>new_additional_covariates</dt>
 <dd><p>a new data matrix
 (see <code>additional_covariates</code>
 from <code><a href="sparse_log_contrast.html">sparse_log_contrast</a></code>)</p></dd>
+
+
 <dt>output</dt>
 <dd><p>string  either "raw", "probability" or "class" only relevant
 classification tasks</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a vector of <code>nrow(new_Z)</code> predictions.</p>
+    
+
+<p>a vector of <code>nrow(new_Z)</code> predictions.</p>
     </div>
 
   </div>
@@ -106,7 +115,7 @@ classification tasks</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

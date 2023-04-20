@@ -14,7 +14,10 @@ second_stage(
   nfolds = 5,
   method = c("regr", "classif"),
   criterion = c("1se", "min"),
-  alpha = 0
+  alpha = 0,
+  w_additional = NULL,
+  folds = NULL,
+  classo = FALSE
 )
 }
 \arguments{
@@ -49,12 +52,20 @@ Default NULL.}
 
 \item{alpha}{nudge the model to select on a higher or lower level of the
 tree. Only relevant for trac based models.}
+
+\item{w_additional}{weight for the additional covaraites}
+
+\item{folds}{predefined folds (see \code{\link{cv_trac}})}
+
+\item{classo}{Should the solver c-lasso be used instead of glmnet? Usefull
+for smaller models}
 }
 \value{
 list with: log_ratios: betas for log ratios; index: dataframe with
 index of the pre selected coefficients and the log ratio name; A: taxonomic
 tree information; method: regression or classification; cv_glmnet:
-output of glmnet, useful for prediction; criterion: which criterion to
+output of glmnet or c-lasso,
+useful for prediction; criterion: which criterion to
 be used to select lambda based on cv (cross validation)
 }
 \description{

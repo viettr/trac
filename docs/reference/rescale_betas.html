@@ -68,31 +68,46 @@ non-zero betas</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rescale_betas</span><span class="op">(</span><span class="va">beta</span>, <span class="va">p_x</span>, <span class="va">p</span>, <span class="va">n_numeric</span>, <span class="va">categorical</span>, <span class="va">xs</span>, <span class="va">xm</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rescale_betas</span><span class="op">(</span><span class="va">beta</span>, <span class="va">p_x</span>, <span class="va">p</span>, <span class="va">n_numeric</span>, <span class="va">categorical</span>, <span class="va">xs</span>, <span class="va">xm</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>beta</dt>
 <dd><p>estimated coefficients</p></dd>
+
+
 <dt>p_x</dt>
 <dd><p>count of additional non-compositional covariates</p></dd>
+
+
 <dt>p</dt>
 <dd><p>count of compositional covariates</p></dd>
+
+
 <dt>n_numeric</dt>
 <dd><p>count of numerical non-compositional covariates</p></dd>
+
+
 <dt>categorical</dt>
 <dd><p>boolean vector indicating if the additional
 non-compositional covariates are categorical or not (see
 <code>get_categorical_variables</code>)</p></dd>
+
+
 <dt>xs</dt>
 <dd><p>vector l2 norm (see<code>normalization_additional_covariates</code>)</p></dd>
+
+
 <dt>xm</dt>
 <dd><p>vector of means (see<code>normalization_additional_covariates</code>)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>matrix of re-scaled betas</p>
+    
+
+<p>matrix of re-scaled betas</p>
     </div>
 
   </div>
@@ -107,7 +122,7 @@ non-compositional covariates are categorical or not (see
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

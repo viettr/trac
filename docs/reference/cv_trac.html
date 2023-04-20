@@ -70,36 +70,47 @@ misclassification error.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">cv_trac</span><span class="op">(</span>
-  <span class="va">fit</span>,
-  <span class="va">Z</span>,
-  <span class="va">y</span>,
-  <span class="va">A</span>,
-  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,
-  folds <span class="op">=</span> <span class="cn">NULL</span>,
-  nfolds <span class="op">=</span> <span class="fl">5</span>,
-  summary_function <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span>,
-  stratified <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cv_trac</span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  <span class="va">Z</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">A</span>,</span>
+<span>  additional_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  folds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nfolds <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  summary_function <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span>,</span>
+<span>  stratified <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>fit</dt>
 <dd><p>output of <code><a href="trac.html">trac</a></code> function.</p></dd>
+
+
 <dt>Z, y, A, additional_covariates</dt>
 <dd><p>same arguments as passed to
 <code><a href="trac.html">trac</a></code></p></dd>
+
+
 <dt>folds</dt>
 <dd><p>a partition of <code>1:nrow(Z)</code>.</p></dd>
+
+
 <dt>nfolds</dt>
 <dd><p>number of folds for cross-validation</p></dd>
+
+
 <dt>summary_function</dt>
 <dd><p>how to combine the errors calculated on each
 observation within a fold (e.g. mean or median) (only for regression task)</p></dd>
+
+
 <dt>stratified</dt>
 <dd><p>if <code>TRUE</code> use stratified folds based on target variable
 only for classification. Default set to FALSE.</p></dd>
+
 </dl></div>
 
   </div>
@@ -114,7 +125,7 @@ only for classification. Default set to FALSE.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>
