@@ -167,7 +167,8 @@ second_stage <- function (Z,
   # transform list with folds to folds_ids containing a vector
   # indicating to which fold each observation belongs to
   if (classo == FALSE & !is.null(folds)) {
-    fold_ids <- tibble::enframe(folds) %>%
+    fold_ids <- tibble::enframe(folds,
+                                name = "name", value = "value") %>%
       # tibble with name as fold id and value as the position of the observation
       # therefore sort by value and extract only names
       tidyr::unnest(cols = c(value)) %>%
