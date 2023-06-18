@@ -1,0 +1,419 @@
+---
+title: "Proof of Concept: sparse log-contrast meets multiomics"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ape)
+library(ggtree)
+devtools::load_all()
+```
+
+## Load Data
+
+```{r}
+EUK_pruned <- readRDS("../EUK_pruned.rds")
+BAC_pruned <- readRDS("../BAC_pruned.rds")
+```
+
+## Data Preprocessing
+
+Check which observations are present in 16s and 18s
+
+
+```{r}
+BAC_pruned@sam_data$EUK_sampaleID
+```
+
+Create data for analysis, replace missing data in tax table and create A matrix for 16s
+
+```{r}
+BAC_pruned <- subset_samples(BAC_pruned, !is.na(EUK_sampaleID))
+BAC_pruned <- subset_samples(BAC_pruned, !is.na(Salinity))
+
+# subset to large size fractions:
+ii_large <- sample_data(BAC_pruned) %>% 
+  as_tibble() %>% 
+  mutate(row = row_number()) %>% 
+  filter(Fraction == 3) %>% 
+  pull(row)
+
+sample_data(BAC_pruned) <- sample_data(BAC_pruned)[ii_large, ]
+
+filter.OTU <- genefilter_sample(BAC_pruned,
+                                filterfun_sample(function(x) x >= 1),
+                                A = 0.1 * nsamples(BAC_pruned))
+# Apply filter  
+BAC_pruned.filter <- prune_taxa(filter.OTU, BAC_pruned)
+
+y <- sample_data(BAC_pruned.filter)$Salinity
+
+tax <- BAC_pruned.filter@tax_table@.Data
+colnames(tax)[1] <- "Kingdom"
+# replace "unclassified" with the appropriate blank tag
+blank <- paste0(c("k", "p", "c", "o", "f", "g"), "__")
+tax[str_detect(tax, "_unclassified")] <- "Unclassified"
+for (i in 1:6) tax[tax[, i] == "Unclassified", i] <- blank[i]
+
+# add an OTU column
+tax <- cbind(tax, rownames(tax))
+colnames(tax)[7] <- "OTU"
+
+# make it so labels are unique
+for (i in seq(2, 6)) {
+  # add a number when the type is unknown... e.g. "g__"
+  ii <- nchar(tax[, i]) == 3
+  if (sum(ii) > 0)
+    tax[ii, i] <- paste0(tax[ii, i], 1:sum(ii))
+}
+# cumulative labels are harder to read but easier to work with:
+for (i in 2:7) {
+  tax[, i] <- paste(tax[, i-1], tax[, i], sep = "::")
+}
+tax <- as.data.frame(tax, stringsAsFactors = TRUE)
+tax <- tax[, c(7, 1:6)]
+# form phylo object:
+tree1 <- tax_table_to_phylo(~Kingdom/Phylum/Class/Order/Family/Genus/OTU, 
+                            data = tax, collapse = TRUE)
+
+# convert this to an A matrix to be used for aggregation:
+A <- phylo_to_A(tree1)
+
+dat <- list(y = y,
+            x = t(BAC_pruned.filter@otu_table@.Data),
+            tree = tree1, 
+            tax = tax,
+            A = A,
+            sample_data = as_tibble(sample_data(BAC_pruned.filter)))
+# rows of A correspond to OTUs as do columns of x
+# rearrange columns of x to be in the order of rows of A:
+dat$x <- dat$x[, match(str_match(rownames(A), "::([^:]+)$")[, 2],
+                       colnames(dat$x))]
+identical(str_match(rownames(A), "::([^:]+)$")[,2], 
+          colnames(dat$x))
+# saveRDS(dat, file = "marine_leucine_large.RDS")
+
+```
+
+Create data for analysis, replace missing data in tax table and create A matrix for 18s
+
+
+```{r}
+
+# subset to large size fractions:
+ii_euk_match <- sample_data(EUK_pruned) %>% 
+  as_tibble(., rownames = NA) %>% 
+  rownames_to_column() %>%
+  mutate(row = row_number()) %>% 
+  filter(rowname %in% as.character(dat$sample_data$EUK_sampaleID)) %>% 
+  pull(row)
+
+
+sample_data(EUK_pruned) <- sample_data(EUK_pruned)[ii_euk_match, ]
+
+filter.OTU.EUK <- genefilter_sample(EUK_pruned,
+                                filterfun_sample(function(x) x >= 1),
+                                A = 0.1 * nsamples(EUK_pruned))
+# Apply filter  
+EUK_pruned.filter <- prune_taxa(filter.OTU.EUK, EUK_pruned)
+
+tax_euk <- EUK_pruned.filter@tax_table@.Data
+
+tax_euk[, 2][tax_euk[, 2] == "SAR"] <- "p__SAR"
+colnames(tax_euk)[1] <- "Kingdom"
+colnames(tax_euk)[1:6] <- colnames(tax)[2:7]  
+# replace "unclassified" with the appropriate blank tag
+blank <- paste0(c("k", "p", "c", "o", "f", "g"), "__")
+tax_euk[!str_detect(tax_euk, "")] <- "Unclassified"
+for (i in 1:6) tax_euk[tax_euk[, i] == "Unclassified", i] <- blank[i]
+
+# add an OTU column
+tax_euk <- cbind(tax_euk, rownames(tax_euk))
+colnames(tax_euk)[7] <- "OTU"
+
+# make it so labels are unique
+for (i in seq(2, 6)) {
+  # add a number when the type is unknown... e.g. "g__"
+  ii <- nchar(tax_euk[, i]) == 3
+  if (sum(ii) > 0)
+    tax_euk[ii, i] <- paste0(tax_euk[ii, i], 1:sum(ii))
+}
+# cumulative labels are harder to read but easier to work with:
+for (i in 2:7) {
+  tax_euk[, i] <- paste(tax_euk[, i-1], tax_euk[, i], sep = "::")
+}
+tax_euk <- as.data.frame(tax_euk, stringsAsFactors = TRUE)
+tax_euk <- tax_euk[, c(7, 1:6)]
+# form phylo object:
+tree1_euk <- tax_table_to_phylo(~Kingdom/Phylum/Class/Order/Family/Genus/OTU, 
+                            data = tax_euk, collapse = TRUE)
+
+# convert this to an A matrix to be used for aggregation:
+A_euk <- phylo_to_A(tree1_euk)
+
+
+dat_euk <- list(y = dat$y,
+            x = 
+              t(EUK_pruned.filter@otu_table@.Data[, as.character(dat$sample_data$EUK_sampaleID)]),
+            tree = tree1_euk, 
+            tax = tax_euk,
+            A = A_euk,
+            sample_data = as_tibble(sample_data(BAC_pruned.filter)))
+
+
+```
+
+```{r}
+# get the phyla information for each genera
+
+tax_levels <- colnames(tax)[c(2:7, 1)]
+
+phylum_preprocess <- enframe(dat$tree$tip.label) %>%
+  separate(value,
+    into = as.character(tax_levels),
+    sep = "::",
+    remove = FALSE,
+    fill = "right"
+  ) %>%
+  mutate(Phylum = str_remove_all(Phylum, "[a-z]__")) %>%
+  #  mutate(Genus = str_remove_all(Genus, "[a-z]__")) %>%
+  select(Phylum, value) %>%
+  mutate(Phylum = case_when(
+    Phylum == "Proteobacteria" ~ "Proteobacteria",
+    Phylum == "Bacteroidetes" ~ "Bacteroidetes",
+    Phylum == "Planctomycetes" ~ "Planctomycetes",
+    Phylum == "Verrucomicrobia" ~ "Verrucomicrobia",
+    Phylum == "Actinobacteria" ~ "Actinobacteria",
+    TRUE ~ "Others"
+  ))
+phylum_group <- split(phylum_preprocess$value, phylum_preprocess$Phylum)
+
+tree_1 <- ggtree::ggtree(dat$tree, layout = "circular")
+tree_1 <- groupOTU(dat$tree, phylum_group)
+ggtree(tree_1, aes(color = group), layout = "circular", size = 0.5) +
+    scale_color_brewer(name = "Phylum", palette = "Set1") 
+```
+
+```{r}
+# get the phyla information for each genera
+
+tax_levels <- colnames(tax)[c(2:7, 1)]
+
+phylum_preprocess <- enframe(dat_euk$tree$tip.label) %>%
+  separate(value,
+    into = as.character(tax_levels),
+    sep = "::",
+    remove = FALSE,
+    fill = "right"
+  ) %>%
+  # mutate(Phylum = str_remove_all(Phylum, "[a-z]__")) %>%
+  #  mutate(Genus = str_remove_all(Genus, "[a-z]__")) %>%
+  select(Phylum, value) %>%
+  mutate(Phylum = case_when(
+    Phylum == "p__SAR" ~ "p__SAR",
+    Phylum == "Archaeplastida" ~ "Archaeplastida",
+    Phylum == "Haptophyta" ~ "Haptophyta",
+    Phylum == "Picozoa" ~ "Picozoa",
+    TRUE ~ "Others"
+  ))
+phylum_group <- split(phylum_preprocess$value, phylum_preprocess$Phylum)
+
+tree_1 <- ggtree::ggtree(dat_euk$tree, layout = "circular")
+tree_1 <- groupOTU(dat_euk$tree, phylum_group)
+ggtree(tree_1, aes(color = group), layout = "circular", size = 0.5) +
+    scale_color_brewer(name = "Phylum", palette = "Set1") 
+```
+
+
+Construct constraint matrix, 2 binary rows. First row 1 p (of 16s) times and 0 p (of 18s) times. Second row 0 p (of 16s) times and 1 p (of 18s) times.  
+
+```{r}
+C_subcomp <- rbind(c(rep(1, ncol(dat$x)), rep(0, ncol(dat_euk$x))),
+           c(rep(0, ncol(dat$x)), rep(1, ncol(dat_euk$x))))
+```
+
+## Preprocessing: Data Splitting
+
+```{r}
+library(Matrix)
+
+set.seed(123)
+ntot <- length(dat$y)
+n <- round(2/3 * ntot)
+tr <- sample(ntot, n)
+ytr <- dat$y[tr]
+yte <- dat$y[-tr]
+log_pseudo <- function(x, pseudo_count = 1) log(x + pseudo_count)
+ztr <- cbind(log_pseudo(dat$x[tr, ]), log_pseudo(dat_euk$x[tr, ]))
+zte <- cbind(log_pseudo(dat$x[-tr, ]), log_pseudo(dat_euk$x[-tr, ]))
+```
+
+## Fit Models SLC
+
+### Joint
+
+```{r}
+set.seed(123)
+fit <- sparse_log_contrast_two(Z = ztr, y = ytr, C = C_subcomp)
+set.seed(123)
+folds <- ggb:::make_folds(n = n, 5)
+cvfit <- cv_sparse_log_contrast(fit, Z = ztr, y = ytr, folds = folds,
+                                summary_function = mean)
+```
+
+
+```{r}
+beta <- fit$beta[, cvfit$cv$ibest]
+beta0 <- beta[beta != 0]
+beta0
+```
+
+### Only 16S
+
+```{r}
+ztr_bac <- log_pseudo(dat$x[tr, ])
+zte_bac <- log_pseudo(dat$x[-tr, ])
+set.seed(123)
+fit_bac <- sparse_log_contrast(Z = ztr_bac, y = ytr)
+set.seed(123)
+cvfit_bac <- cv_sparse_log_contrast(fit_bac, Z = ztr_bac, 
+                                    y = ytr, folds = folds,
+                                    summary_function = mean)
+
+```
+
+```{r}
+beta_bac <- fit_bac$beta[, cvfit_bac$cv$ibest]
+beta0_bac <- beta_bac[beta_bac != 0]
+beta0_bac
+```
+
+### Only 18s
+
+```{r}
+ztr_euk <- log_pseudo(dat_euk$x[tr, ])
+zte_euk <- log_pseudo(dat_euk$x[-tr, ])
+set.seed(123)
+fit_euk <- sparse_log_contrast(Z = ztr_euk, y = ytr)
+set.seed(123)
+cvfit_euk <- cv_sparse_log_contrast(fit_euk, Z = ztr_euk, 
+                                    y = ytr, folds = folds,
+                                    summary_function = mean)
+```
+
+```{r}
+beta_euk <- fit_euk$beta[, cvfit_euk$cv$ibest]
+beta0_euk <- beta_euk[beta_euk != 0]
+beta0_euk
+```
+
+### Check Predictive Performance
+
+```{r}
+y_hat <- predict_sparse_log_contrast(fit, new_Z = zte)[, cvfit$cv$ibest]
+y_hat_bac <- predict_sparse_log_contrast(fit_bac, 
+                                         new_Z = zte_bac)[, cvfit_bac$cv$ibest]
+y_hat_euk <- predict_sparse_log_contrast(fit_euk, 
+                                         new_Z = zte_euk)[, cvfit_euk$cv$ibest]
+mean((yte - y_hat)^2)
+mean((yte - y_hat_bac)^2)
+mean((yte - y_hat_euk)^2)
+
+
+data.frame(y = yte, yhat = y_hat) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+data.frame(y = yte, yhat = y_hat_bac) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+data.frame(y = yte, yhat = y_hat_euk) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+
+```
+
+## Fit Models trac
+
+
+```{r}
+set.seed(123)
+fit_trac <- trac_two(Z = ztr, y = ytr, 
+                     A = list(dat$A, dat_euk$A))
+plot_trac_path(fit_trac)
+
+set.seed(123)
+cvfit_trac <- cv_trac_two(fit_trac, Z = ztr, 
+                          y = ytr, 
+                          A = list(dat$A, dat_euk$A),
+                          folds = folds,
+                          summary_function = mean)
+plot_cv_trac(cvfit_trac)
+```
+
+```{r}
+alphas <- fit_trac[[1]]$alpha[, cvfit_trac$cv[[1]]$ibest]
+alphas_0 <- alphas[alphas != 0]
+alphas_0
+```
+
+
+```{r}
+set.seed(123)
+fit_trac_bac <- trac(Z = ztr_bac, y = ytr, A = dat$A)
+plot_trac_path(fit_trac_bac)
+
+set.seed(123)
+cvfit_trac_bac <- cv_trac(fit_trac_bac, Z = ztr_bac, y = ytr, 
+                          A = dat$A, folds = folds,
+                          summary_function = mean)
+plot_cv_trac(cvfit_trac_bac)
+```
+
+```{r}
+alphas_bac <- fit_trac_bac[[1]]$alpha[, cvfit_trac_bac$cv[[1]]$ibest]
+alphas_bac_0 <- alphas_bac[alphas_bac != 0]
+alphas_bac_0
+```
+
+```{r}
+set.seed(123)
+fit_trac_euk <- trac(Z = ztr_euk, y = ytr, A = dat_euk$A)
+plot_trac_path(fit_trac_euk)
+set.seed(123)
+cvfit_trac_euk <- cv_trac(fit_trac_euk, Z = ztr_euk, 
+                          y = ytr, A = dat_euk$A, folds = folds,
+                          summary_function = mean)
+plot_cv_trac(cvfit_trac_euk)
+```
+
+```{r}
+alphas_euk <- fit_trac_euk[[1]]$alpha[, cvfit_trac_euk$cv[[1]]$ibest]
+alphas_euk_0 <- alphas_euk[alphas_euk != 0]
+alphas_euk_0
+```
+
+```{r}
+y_hat_trac <- predict_trac(fit_trac, new_Z = zte)[[1]][, cvfit_trac$cv[[1]]$ibest]
+y_hat_trac_bac <- predict_trac(fit_trac_bac, 
+                               new_Z = zte_bac)[[1]][, cvfit_trac_bac$cv[[1]]$ibest]
+y_hat_trac_euk <- predict_trac(fit_trac_euk, 
+                               new_Z = zte_euk)[[1]][, cvfit_trac_euk$cv[[1]]$ibest]
+
+mean((yte - y_hat_trac)^2)
+mean((yte - y_hat_trac_bac)^2)
+mean((yte - y_hat_trac_euk)^2)
+
+
+data.frame(y = yte, yhat = y_hat_trac) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+data.frame(y = yte, yhat = y_hat_trac_bac) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+data.frame(y = yte, yhat = y_hat_trac_euk) %>%
+  ggplot(aes(x = y, y = yhat)) +
+  geom_point()
+```
+
