@@ -18,14 +18,10 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.0
-Remotes: 
-    yanxht/hsm,
-    jacobbien/ggb
+RoxygenNote: 7.3.2
 Imports: 
     reticulate,
     Matrix,
-    ggb,
     igraph,
     ape,
     purrr,

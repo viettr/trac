@@ -3,7 +3,7 @@
 \name{make_folds_stratified}
 \alias{make_folds_stratified}
 \title{This function creates stratified folds for cross validation for unbalanced
-data. The code is adopted from ggb:::make_folds}
+data. The code is adopted from ggb make_folds}
 \usage{
 make_folds_stratified(n, nfolds, y)
 }
@@ -16,5 +16,5 @@ make_folds_stratified(n, nfolds, y)
 }
 \description{
 This function creates stratified folds for cross validation for unbalanced
-data. The code is adopted from ggb:::make_folds
+data. The code is adopted from ggb make_folds
 }

@@ -20,7 +20,7 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
   if (!is.null(additional_covariates) & !is.data.frame(additional_covariates)) {
     additional_covariates <- data.frame(additional_covariates)
   }
-  if (is.null(folds)) folds <- ggb:::make_folds(n, nfolds)
+  if (is.null(folds)) folds <- make_folds(n, nfolds)
   else
     nfolds <- length(folds)
   cv <- list()
@@ -78,3 +78,6 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
              fit_folds = fit_folds)
   list(cv = cv, folds = folds)
 }
+
+
+#Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/cv_ggb.R#L81
