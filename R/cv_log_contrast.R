@@ -20,14 +20,12 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
   if (!is.null(additional_covariates) & !is.data.frame(additional_covariates)) {
     additional_covariates <- data.frame(additional_covariates)
   }
-  if (is.null(folds)) folds <- ggb:::make_folds(n, nfolds)
+  if (is.null(folds)) folds <- make_folds(n, nfolds)
   else
     nfolds <- length(folds)
   cv <- list()
   fit_folds <- list() # save this to reuse by log-ratio's cv function
   errs <- matrix(NA, ncol(fit$beta), nfolds)
-  predicted_values <- matrix(NA, 0, ncol(fit$beta))
-
   for (i in seq(nfolds)) {
     cat("fold", i, fill = TRUE)
     # add for backward compatibility
@@ -67,12 +65,6 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
         c(y[folds[[i]]])
       errs[, i] <- colMeans(er)
     }
-
-    predicted_values <- rbind(predicted_values,
-                              predict_trac(
-                                list(fit_folds[[i]]),
-                                Z[folds[[i]], ],
-                                additional_covariates[folds[[i]], ])[[1]])
   }
   m <- rowMeans(errs)
   se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
@@ -83,8 +75,9 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
              lambda_1se = fit$fraclist[i1se], i1se = i1se,
              fraclist = fit$fraclist,
              nonzeros = colSums(abs(fit$beta) > 1e-5),
-             fit_folds = fit_folds,
-             predicted_values = predicted_values
-             )
+             fit_folds = fit_folds)
   list(cv = cv, folds = folds)
 }
+
+
+#Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/cv_ggb.R#L81

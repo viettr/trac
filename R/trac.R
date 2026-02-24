@@ -37,6 +37,8 @@
 #'   to 1). Or a list of num_w such vectors.
 #' @param w_additional_covariates vector of positive weights of
 #'   length ncol(additional_covariates) (default: all equal to 1).
+#' @param w_compositional vector of positive weights of
+#'   length ncol(Z) (default: all equal to 1).
 #' @param method string which estimation method to use should be in
 #'   ("regr", "classif", "classif_huber")
 #' @param intercept only works for classification! Should the intercept be

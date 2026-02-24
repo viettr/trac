@@ -16,7 +16,7 @@ cv_classo_fitting <- function(fit, X, y, folds = NULL, nfolds = 5,
   n <- nrow(X)
   p <- ncol(X)
   stopifnot(length(y) == n)
-  if (is.null(folds)) folds <- ggb:::make_folds(n, nfolds)
+  if (is.null(folds)) folds <- make_folds(n, nfolds)
   else
     nfolds <- length(folds)
   cv <- list()

@@ -14,6 +14,7 @@ trac(
   min_frac = 1e-04,
   w = NULL,
   w_additional_covariates = NULL,
+  w_compositional = NULL,
   method = c("regr", "classif", "classif_huber"),
   intercept = TRUE,
   normalized = TRUE,
@@ -45,6 +46,9 @@ to 1). Or a list of num_w such vectors.}
 
 \item{w_additional_covariates}{vector of positive weights of
 length ncol(additional_covariates) (default: all equal to 1).}
+
+\item{w_compositional}{vector of positive weights of
+length ncol(Z) (default: all equal to 1).}
 
 \item{method}{string which estimation method to use should be in
 ("regr", "classif", "classif_huber")}

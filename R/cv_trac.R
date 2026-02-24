@@ -27,7 +27,7 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
     if (stratified) {
       folds <- make_folds_stratified(n, nfolds, y)
     } else {
-      folds <- ggb:::make_folds(n, nfolds)
+      folds <- make_folds(n, nfolds)
     }
   } else {
     nfolds <- length(folds)
@@ -38,7 +38,6 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
   for (iw in seq_along(fit)) {
     if (length(fit) > 1) cat("CV for weight sequence #", iw, fill = TRUE)
     errs <- matrix(NA, ncol(fit[[iw]]$beta), nfolds)
-    predicted_values <- matrix(NA, 0, ncol(fit[[iw]]$beta))
     for (i in seq(nfolds)) {
       cat("fold", i, fill = TRUE)
       # add for backward compatibility
@@ -86,12 +85,6 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
           c(y[folds[[i]]])
         errs[, i] <- colMeans(er)
       }
-
-      predicted_values <- rbind(predicted_values,
-                                predict_trac(
-        fit_folds[[i]],
-        Z[folds[[i]], ],
-        additional_covariates[folds[[i]], ])[[1]])
     }
     m <- rowMeans(errs)
     se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
@@ -103,8 +96,7 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
       lambda_1se = fit[[iw]]$fraclist[i1se], i1se = i1se,
       fraclist = fit[[iw]]$fraclist, w = fit[[iw]]$w,
       nonzeros = colSums(abs(fit[[iw]]$gamma) > 1e-5),
-      fit_folds = fit_folds,
-      predicted_values = predicted_values
+      fit_folds = fit_folds
     )
   }
   list(
@@ -115,8 +107,21 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
   )
 }
 
+# Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/cv_ggb.R#L81
+make_folds <- function(n, nfolds) {
+  nn <- round(n / nfolds)
+  sizes <- rep(nn, nfolds)
+  sizes[nfolds] <- sizes[nfolds] + n - nn * nfolds
+  b <- c(0, cumsum(sizes))
+  ii <- sample(n)
+  folds <- list()
+  for (i in seq(nfolds))
+    folds[[i]] <- ii[seq(b[i] + 1, b[i + 1])]
+  folds
+}
+
 #' This function creates stratified folds for cross validation for unbalanced
-#' data. The code is adopted from ggb:::make_folds
+#' data. The code is adopted from ggb make_folds
 #'
 #' @param n number of observations
 #' @param nfolds number of folds
