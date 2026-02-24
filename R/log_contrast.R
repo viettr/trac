@@ -128,14 +128,17 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
   if (classification) {
     # for classification we do not need to scale the outcome
     yt <- y
+    M <- Z_clr
   } else {
     # scale y
     ybar <- mean(y)
     yt <- y - ybar
+
+    v <- Matrix::colMeans(Z_clr)
+    M <- Matrix::t(Matrix::t(Z_clr) - v)
   }
 
-  v <- Matrix::colMeans(Z_clr)
-  M <- Matrix::t(Matrix::t(Z_clr) - v)
+
 
   fit <- list()
   X_classo <- as.matrix(M)

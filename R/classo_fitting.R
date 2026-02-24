@@ -100,14 +100,13 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
     fraclist <- exp(seq(0, log(min_frac), length = nlam))
 
 
-  ybar <- mean(y)
   if (classification) {
     # for classification we do not need to scale the outcome
     yt <- y
   } else {
     # scale y
-    # ybar <- mean(y)
-    # yt <- y - ybar
+    ybar <- mean(y)
+    yt <- y - ybar
   }
 
   if (!classification) intercept <- TRUE
@@ -121,7 +120,7 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
                                 y = array(yt))
   prob$formulation$classification <- classification
   prob$formulation$concomitant <- FALSE
-  if (classification & intercept) {
+  if (intercept) {
     prob$formulation$intercept <- TRUE
   }
   if (method == "classif_huber") {

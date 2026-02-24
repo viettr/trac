@@ -64,6 +64,7 @@
 trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
                  nlam = 20, min_frac = 1e-4, w = NULL,
                  w_additional_covariates = NULL,
+                 w_compositional = NULL,
                  method = c("regr", "classif", "classif_huber"),
                  intercept = TRUE, normalized = TRUE,
                  rho = 0.0,
@@ -144,6 +145,9 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     fraclist <- lapply(1:num_w,
                        function(x) exp(seq(0, log(min_frac), length = nlam)))
   }
+  if (is.null(w_compositional)) {
+    w_compositional <- rep(1, (t_size - 1))
+  }
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
     if (normalized) {
@@ -170,27 +174,31 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     # the weights for the compositional effects is taken into account by
     # modifying C and the weights for the non-compositional effects through
     # w in c-lasso
-    w_not_additional_covariates <- rep(1, (t_size - 1))
-    w_x <- c(w_not_additional_covariates, w_additional_covariates)
+    w_x <- c(w_compositional, w_additional_covariates)
   }
-  if (classification) {
-    # for classification we do not need to scale the outcome
-    yt <- y
-  } else {
-    # scale y
-    ybar <- mean(y)
-    yt <- y - ybar
-  }
+
   # clr transformation on Z
   Zbar <- Matrix::rowMeans(Z)
   Z_clr <- Z - Zbar
   # add the additional covariates
   Z_clrA <- as.matrix(Z_clr %*% A)
 
-  # define number of nodes and leafs under the node in order to
-  # calculate the geom mean for the compositional data only
-  v <- Matrix::colMeans(Z_clrA)
-  M <- Matrix::t(Matrix::t(Z_clrA) - v)
+  if (classification) {
+    # for classification we do not need to scale the outcome
+    yt <- y
+    M <- Z_clrA
+  } else {
+    # scale y
+    ybar <- mean(y)
+    yt <- y - ybar
+    # define number of nodes and leafs under the node in order to
+    # calculate the geom mean for the compositional data only
+    v <- Matrix::colMeans(Z_clrA)
+    M <- Matrix::t(Matrix::t(Z_clrA) - v)
+  }
+
+
+
 
 
   # always use a intercept when not classification due to the nature of the
@@ -231,6 +239,7 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     } else {
       prob$formulation$huber <- FALSE
     }
+    if (!is.null(w_compositional)) prob$formulation$w <- w_compositional
     if (!is.null(additional_covariates)) prob$formulation$w <- w_x
     # solve  it
     prob$solve()
