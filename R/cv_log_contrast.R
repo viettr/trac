@@ -69,7 +69,7 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
   m <- rowMeans(errs)
   se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
   ibest <- which.min(m)
-  i1se <- min(which(m < m[ibest] + se[ibest]))
+  i1se <- min(which(m <= m[ibest] + se[ibest]))
   cv <- list(errs = errs, m = m, se = se,
              lambda_best = fit$fraclist[ibest], ibest = ibest,
              lambda_1se = fit$fraclist[i1se], i1se = i1se,

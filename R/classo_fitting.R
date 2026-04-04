@@ -32,10 +32,6 @@
 #' @param intercept only works for classification! Should the intercept be
 #'   fitted. Default is TRUE, set to FALSE if the intercept should not be
 #'   included
-#' @param normalized if `TRUE` normalize the additional covariates.
-#'   In this case the calculation for each covariate / feature:
-#'   (X-X_mean) / ||X||_2
-#'   The weights will be transformed back to the original scale.
 #' @param rho value for huberized classification loss.
 #'   Default = 0.0.
 #'
@@ -43,8 +39,7 @@
 classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
                             nlam = 20, min_frac = 1e-4,
                             method = c("regr", "classif", "classif_huber"),
-                            w = NULL, intercept = TRUE,
-                            normalized = TRUE, rho = 0.0) {
+                            w = NULL, intercept = TRUE, rho = 0.0) {
   n <- length(y)
   stopifnot(nrow(X) == n)
   p <- ncol(X)
@@ -56,34 +51,6 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
 
   classification <- method_check$classification
   y <- method_check$y
-
-
-  # normalize data
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(additional_covariates =
-                                            as.data.frame(X),
-                                            p_x = p,
-                                            intercept = intercept)
-      X <- normalized_values$X
-    } else {
-      # get the number of categorical variables if no normalization is applied
-      categorical_list <- get_categorical_variables(as.data.frame(X))
-      categorical <- categorical_list[["categorical"]]
-      n_categorical <- categorical_list[["n_categorical"]]
-      if (n_categorical > 0) {
-        additional_covariates[, categorical] <-
-          transform_categorical_variables(as.data.frame(X), categorical)
-    }
-    # define the weights as 1 for every non compositional covariates
-    # since c-lasso can now handle weights and we do not need to transform
-    # them anymore and pass them directly to the solver
-    # the weights for the compositional effects is taken into account by
-    # modifying C and the weights for the non-compositional effects through
-    # w in c-lasso
-    }
-
 
   # CLASSO can solve a problem of the form
   #
@@ -99,20 +66,23 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
   if (is.null(fraclist))
     fraclist <- exp(seq(0, log(min_frac), length = nlam))
 
-
   if (classification) {
     # for classification we do not need to scale the outcome
     yt <- y
+    M <- X
   } else {
     # scale y
     ybar <- mean(y)
     yt <- y - ybar
+    v <- colMeans(X)
+    M <- t(t(as.matrix(X)) - v)
   }
 
-  if (!classification) intercept <- TRUE
+  if (!classification) intercept <- FALSE
+
 
   fit <- list()
-  X_classo <- as.matrix(X)
+  X_classo <- as.matrix(M)
 
   # set up CLASSO problem:
   prob <- classo$classo_problem(X = X_classo,
@@ -122,6 +92,8 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
   prob$formulation$concomitant <- FALSE
   if (intercept) {
     prob$formulation$intercept <- TRUE
+  } else {
+    prob$formulation$intercept <- FALSE
   }
   if (method == "classif_huber") {
     prob$formulation$huber <- TRUE
@@ -135,7 +107,7 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
   prob$model_selection$StabSel <- FALSE
   prob$model_selection$PATHparameters$lambdas <- fraclist
   if (!is.null(w)) prob$formulation$w <- w
-
+  prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
 
   # solve  it
   prob$solve()
@@ -154,27 +126,12 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
   }
   beta <- t(beta)
   lambda_classo <- prob$model_selection$PATHparameters$lambdas
-#  if (!classification) beta0 <- ybar - crossprod(beta[1:p, ], v)
-  if (!intercept) beta0 <- rep(0, times = length(lambda_classo))
+  if (!classification) beta0 <- ybar - crossprod(beta[1:p, ], v)
+  if (!classification) intercept <- TRUE
 
 
 
-  if (normalized && (normalized_values$n_numeric != 0)) {
-      # rescale betas for numerical values
-      # rescale only if beta not 0
-      beta <- rescale_betas(
-        beta = beta,
-        p_x = p,
-        p = 0,
-        n_numeric = normalized_values$n_numeric,
-        categorical = normalized_values$categorical,
-        xs = normalized_values$xs,
-        xm = normalized_values$xm
-      )
-      rownames(beta)[1:p] <- colnames(X)
-  } else {
-    rownames(beta)[1:p] <- colnames(X)
-  }
+  rownames(beta)[1:p] <- colnames(X)
 
   list(beta0 = beta0,
        beta = beta,
@@ -185,6 +142,5 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
        w = w,
        method = method,
        intercept = intercept,
-       rho = rho,
-       normalized = normalized)
+       rho = rho)
 }

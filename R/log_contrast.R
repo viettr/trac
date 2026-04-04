@@ -47,7 +47,7 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
                                 nlam = 20, min_frac = 1e-4,
                                 method = c("regr", "classif", "classif_huber"),
                                 w_additional_covariates = NULL,
-                                intercept = TRUE, normalized = TRUE,
+                                intercept = TRUE, normalized = FALSE,
                                 rho = 0.0) {
   n <- length(y)
   stopifnot(nrow(Z) == n)
@@ -174,7 +174,7 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
   prob$model_selection$StabSel <- FALSE
   prob$model_selection$PATHparameters$lambdas <- fraclist
   if (!is.null(additional_covariates)) prob$formulation$w <- w_x
-
+  prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
 
   # solve  it
   prob$solve()

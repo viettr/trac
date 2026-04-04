@@ -35,14 +35,17 @@
 #' @param folds predefined folds (see \code{\link{cv_trac}})
 #' @param classo Should the solver c-lasso be used instead of glmnet? Usefull
 #'   for smaller models
-#'
+#' @param disjoint_filter If the preselected coefficients live on a tree
+#'   we can enforce that no log-ratios within the same branch are selected
 #'
 #' @return list with: log_ratios: betas for log ratios; index: dataframe with
 #'   index of the pre selected coefficients and the log ratio name; A: taxonomic
 #'   tree information; method: regression or classification; cv_glmnet:
 #'   output of glmnet or c-lasso,
 #'   useful for prediction; criterion: which criterion to
-#'   be used to select lambda based on cv (cross validation)
+#'   be used to select lambda based on cv (cross validation).
+#'   Returns NULL with a warning if fewer than 2 variables survive pre-screening
+#'   or filtering.
 #' @export
 
 second_stage <- function (Z,
@@ -57,7 +60,8 @@ second_stage <- function (Z,
                           alpha = 0,
                           w_additional = NULL,
                           folds = NULL,
-                          classo = FALSE) {
+                          classo = FALSE,
+                          disjoint_filter = FALSE) {
   criterion <- match.arg(criterion)
   method <- match.arg(method)
   stopifnot(alpha >= 0)
@@ -73,10 +77,11 @@ second_stage <- function (Z,
   }
   pre_selected_index <- abs(pre_selected) >= 1e-07
   if (length(pre_selected[pre_selected_index]) < 2) {
-    stop(
-      "Only two or less preselected variables are passed.\n
-        Therefore using a second step doesn't make sense."
+    warning(
+      "Fewer than 2 preselected variables. ",
+      "A second stage doesn't make sense. Returning NULL."
     )
+    return(NULL)
   }
   if (!is.null(topk)) {
     if (!is.numeric(topk))
@@ -120,6 +125,26 @@ second_stage <- function (Z,
   Z_A_names <- colnames(Z_A)
   n <- nrow(Z_A)
   colnames(index) <- c("index1", "index2")
+  if (!is.null(A) & disjoint_filter == TRUE) {
+    # A pair is disjoint if the dot product of their descendant
+    # indicator vectors is exactly 0
+    disjoint_mask <- Matrix::colSums(A[, index$index1, drop = FALSE] * A[, index$index2, drop = FALSE]) == 0
+
+    # Filter the index dataframe to keep only disjoint pairs
+    index <- index[disjoint_mask, , drop = FALSE]
+
+    if (nrow(index) == 0) {
+      warning("No valid disjoint log-ratios could be constructed. Returning NULL.")
+      return(NULL)
+    }
+  }
+
+  # Guard against < 1 row after expand.grid filtering (edge case)
+  if (nrow(index) == 0) {
+    warning("No valid log-ratio pairs could be formed. Returning NULL.")
+    return(NULL)
+  }
+
   index$variable1 <- Z_A_names[index$index1]
   index$variable2 <- Z_A_names[index$index2]
   if (!is.null(A)) {
@@ -149,7 +174,7 @@ second_stage <- function (Z,
     if (n_categorical > 0) {
       additional_covariates[, categorical] <-
         transform_categorical_variables(additional_covariates,
-                                               categorical)
+                                        categorical)
     }
     n_x <- ncol(additional_covariates)
     if (is.null(w_additional)) {
@@ -166,15 +191,13 @@ second_stage <- function (Z,
 
   # transform list with folds to folds_ids containing a vector
   # indicating to which fold each observation belongs to
+  # use .data$ pronoun instead of quoted strings in dplyr verbs
   if (classo == FALSE & !is.null(folds)) {
     fold_ids <- tibble::enframe(folds,
                                 name = "name", value = "value") %>%
-      # tibble with name as fold id and value as the position of the observation
-      # therefore sort by value and extract only names
       tidyr::unnest(cols = c(value)) %>%
-      dplyr::arrange("value") %>%
-      dplyr::select("name") %>%
-      c()
+      dplyr::arrange(.data$value) %>%
+      dplyr::pull(.data$name)
   }
   if (classo == TRUE) {
     fit <- classo_fitting(X = expanded_z, y = y, method = method)
@@ -207,6 +230,19 @@ second_stage <- function (Z,
       cv_glmnet = list(fit = fit, cvfit = cvfit),
       criterion = criterion,
       fit_method = "classo"))
+    # } else if (stabs == TRUE) {
+    #   stab_out <- stabsel(x = expanded_z, y = y_new,
+    #                       fitfun = glmnet.lasso,
+    #                       args.fitfun = list(family = "binomial"),
+    #                       q = 5,           # Number of variables we expect/guess to be active
+    #                       PFER = 1,        # Per-Family Error Rate (Upper bound for false positives)
+    #                       B = 100)         # Number of subsampling iterations (usually 50-100)
+    #
+    #   selected_vars <- names(stab_out$selected)
+    #   train_data_subset <- data.frame(expanded_z[, selected_vars, drop = FALSE], y = y_new)
+    #
+    #   # Fit a standard unpenalized logistic regression
+    #   final_model <- glm(y ~ ., data = train_data_subset, family = "binomial")
   } else {
 
     if (method == "classif") {
@@ -220,6 +256,7 @@ second_stage <- function (Z,
     else {
       y_new <- y
     }
+
     if (is.null(folds)) fold_ids <- NULL
     if (method == "regr") {
       if (is.null(fold_ids)) {
@@ -238,7 +275,7 @@ second_stage <- function (Z,
           x = expanded_z,
           y = y_new,
           alpha = 1,
-          foldsid = fold_ids,
+          foldid = fold_ids,
           standardize = TRUE,
           type.measure = "mse",
           family = "gaussian",
@@ -264,12 +301,13 @@ second_stage <- function (Z,
           x = expanded_z,
           y = y_new,
           alpha = 1,
-          foldsid = fold_ids,
+          foldid = fold_ids,
           standardize = TRUE,
           family = "binomial",
           type.measure = "class",
           penalty.factor = penalty_factor
         )
+
       }
     }
     if (criterion == "1se") {

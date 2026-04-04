@@ -32,7 +32,6 @@ cv_classo_fitting <- function(fit, X, y, folds = NULL, nfolds = 5,
       fit$w <- NULL
     }
     if (is.null(fit$rho)) fit$rho <- 0
-    if (is.null(fit$normalized)) fit$normalized <- FALSE
     # train on all but i-th fold (and use settings from fit):
     fit_folds[[i]] <- classo_fitting(X[-folds[[i]], ],
                                       y[-folds[[i]]],
@@ -40,8 +39,7 @@ cv_classo_fitting <- function(fit, X, y, folds = NULL, nfolds = 5,
                                       fraclist = fit$fraclist,
                                       w = fit$w,
                                       method = fit$method,
-                                      rho = fit$rho,
-                                      normalized = fit$normalized)
+                                      rho = fit$rho)
     if (fit$refit) stop("Not yet supported.")
     if (fit$method == "regr" | is.null(fit$method)) {
       errs[, i] <- apply((predict_trac(
@@ -68,7 +66,7 @@ cv_classo_fitting <- function(fit, X, y, folds = NULL, nfolds = 5,
   m <- rowMeans(errs)
   se <- apply(errs, 1, stats::sd) / sqrt(nfolds)
   ibest <- which.min(m)
-  i1se <- min(which(m < m[ibest] + se[ibest]))
+  i1se <- min(which(m <= m[ibest] + se[ibest]))
   cv <- list(errs = errs, m = m, se = se,
              lambda_best = fit$fraclist[ibest], ibest = ibest,
              lambda_1se = fit$fraclist[i1se], i1se = i1se,

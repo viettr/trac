@@ -42,7 +42,7 @@ plot_cv_trac_single_w <- function(cvfit_trac_single_w) {
   graphics::plot(log(x$fraclist), x$m, xlab = "log(lambda)",
                  ylab = "Cross-validation Error",
                  type = "n", ylim = c(0,1))
-  graphics::axis(3, at = log(x$fraclist), labels = paste(x$nonzero), srt = 90,
+  graphics::axis(3, at = log(x$fraclist), labels = paste(x$nonzeros), srt = 90,
                  adj = 0)
   graphics::mtext("Number of nonzero gamma", 3, 4, cex = 1.2)
   error_bars(log(x$fraclist), x$m - x$se, x$m + x$se, width = 0.01,

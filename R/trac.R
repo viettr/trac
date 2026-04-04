@@ -68,7 +68,7 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
                  w_additional_covariates = NULL,
                  w_compositional = NULL,
                  method = c("regr", "classif", "classif_huber"),
-                 intercept = TRUE, normalized = TRUE,
+                 intercept = TRUE, normalized = FALSE,
                  rho = 0.0,
                  output = c("raw", "probability")) {
   # input check
@@ -244,6 +244,7 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     if (!is.null(w_compositional)) prob$formulation$w <- w_compositional
     if (!is.null(additional_covariates)) prob$formulation$w <- w_x
     # solve  it
+    prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
     prob$solve()
     # extract outputs
 
