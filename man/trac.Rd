@@ -17,9 +17,8 @@ trac(
   w_compositional = NULL,
   method = c("regr", "classif", "classif_huber"),
   intercept = TRUE,
-  normalized = TRUE,
   rho = 0,
-  output = c("raw", "probability")
+  limit_active = TRUE
 )
 }
 \arguments{
@@ -57,17 +56,12 @@ length ncol(Z) (default: all equal to 1).}
 fitted. Default is TRUE, set to FALSE if the intercept should not be
 included}
 
-\item{normalized}{if \code{TRUE} normalize the additional covariates.
-In this case the calculation for each covariate / feature:
-(X-X_mean) / ||X||_2
-The weights will be transformed back to the original scale.}
-
 \item{rho}{value for huberized classification loss.
 Default = -0.0.}
 
-\item{output}{only relevant for classification. String indicating whether
-the raw score output or probability for class 1 should be used.
-The probability is estimated with Platt’s probibalistic output}
+\item{limit_active}{(default = TRUE) should the solver stop optimizing if there are more
+non-zero features than degrees of freedom (in this case the number of
+observations)}
 }
 \value{
 a list of length num_w, where each list element corresponds to the

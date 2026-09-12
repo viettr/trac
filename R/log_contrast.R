@@ -34,12 +34,11 @@
 #' @param intercept only works for classification! Should the intercept be
 #'   fitted. Default is TRUE, set to FALSE if the intercept should not be
 #'   included
-#' @param normalized if `TRUE` normalize the additional covariates.
-#'   In this case the calculation for each covariate / feature:
-#'   (X-X_mean) / ||X||_2
-#'   The weights will be transformed back to the original scale.
 #' @param rho value for huberized classification loss.
 #'   Default = 0.0.
+#' @param limit_active (default = TRUE) should the solver stop optimizing if there are more
+#'   non-zero features than degrees of freedom (in this case the number of
+#'   observations)
 #'
 #' @export
 sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
@@ -47,8 +46,8 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
                                 nlam = 20, min_frac = 1e-4,
                                 method = c("regr", "classif", "classif_huber"),
                                 w_additional_covariates = NULL,
-                                intercept = TRUE, normalized = FALSE,
-                                rho = 0.0) {
+                                intercept = TRUE,
+                                rho = 0.0, limit_active = TRUE) {
   n <- length(y)
   stopifnot(nrow(Z) == n)
   p <- ncol(Z)
@@ -79,15 +78,6 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
 
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(additional_covariates =
-                                              additional_covariates,
-                                            p_x = p_x,
-                                            intercept = intercept)
-      additional_covariates <- normalized_values$X
-    } else {
       # get the number of categorical variables if no normalization is applied
       categorical_list <- get_categorical_variables(additional_covariates)
       categorical <- categorical_list[["categorical"]]
@@ -96,7 +86,7 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
         additional_covariates[, categorical] <-
           transform_categorical_variables(additional_covariates, categorical)
       }
-    }
+
     # define the weights as 1 for every non compositional covariates
     # since c-lasso can now handle weights and we do not need to transform
     # them anymore and pass them directly to the solver
@@ -136,6 +126,14 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
 
     v <- Matrix::colMeans(Z_clr)
     M <- Matrix::t(Matrix::t(Z_clr) - v)
+    # center the data to for intercept estimation later for regression
+    if (!is.null(additional_covariates)) {
+      additional_covariates <- as.matrix(additional_covariates)
+      if (!classification) {
+        add_means <- colMeans(additional_covariates)
+        additional_covariates <- sweep(additional_covariates, 2L, add_means, "-")
+      }
+    }
   }
 
 
@@ -174,8 +172,9 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
   prob$model_selection$StabSel <- FALSE
   prob$model_selection$PATHparameters$lambdas <- fraclist
   if (!is.null(additional_covariates)) prob$formulation$w <- w_x
-  prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
-
+  if (limit_active == TRUE) {
+    prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
+  }
   # solve  it
   prob$solve()
   # extract outputs
@@ -193,28 +192,19 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
   }
   beta <- t(beta)
   lambda_classo <- prob$model_selection$PATHparameters$lambdas
-  if (!classification) beta0 <- ybar - crossprod(beta[1:p, ], v)
   if (!intercept) beta0 <- rep(0, times = length(lambda_classo))
+  if (!classification) beta0 <- ybar - crossprod(beta[1:p, ], v)
 
+  if (!classification && !is.null(additional_covariates)) {
+    beta0 <- as.numeric(beta0) - as.numeric(crossprod(
+      beta[(p + 1):(p + p_x), , drop = FALSE], add_means))
+  }
 
   if (!classification) intercept <- TRUE
 
   if (!is.null(additional_covariates)) {
     if (!is.null(colnames(Z)) & !is.null( colnames(additional_covariates))) {
       rownames(beta) <- c(colnames(Z), colnames(additional_covariates))
-    }
-    if (normalized && (normalized_values$n_numeric != 0)) {
-      # rescale betas for numerical values
-      # rescale only if beta not 0
-      beta <- rescale_betas(
-        beta = beta,
-        p_x = p_x,
-        p = p,
-        n_numeric = normalized_values$n_numeric,
-        categorical = normalized_values$categorical,
-        xs = normalized_values$xs,
-        xm = normalized_values$xm
-      )
     }
   } else {
     rownames(beta)[1:p] <- colnames(Z)
@@ -230,5 +220,5 @@ sparse_log_contrast <- function(Z, y, additional_covariates = NULL,
        method = method,
        intercept = intercept,
        rho = rho,
-       normalized = normalized)
+       limit_active = limit_active)
 }

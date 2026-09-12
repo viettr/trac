@@ -20,7 +20,7 @@ predict_second_stage(
 \item{fit}{output of the function \code{\link{second_stage}}}
 
 \item{output}{string  either "raw", "probability" or "class" only relevant
-classification tasks}
+classification tasks and glmnet in second stage}
 }
 \value{
 a vector of \code{nrow(new_Z) + nrow(new_additional_covariates)}

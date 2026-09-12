@@ -31,7 +31,8 @@
 #'   "1se" or "min"
 #' @param alpha nudge the model to select on a higher or lower level of the
 #'   tree. Only relevant for trac based models.
-#' @param w_additional weight for the additional covaraites
+#' @param w_additional weight for the additional covariates, does not work for
+#'   c-lasso as stage II
 #' @param folds predefined folds (see \code{\link{cv_trac}})
 #' @param classo Should the solver c-lasso be used instead of glmnet? Usefull
 #'   for smaller models
@@ -204,12 +205,6 @@ second_stage <- function (Z,
 
     cvfit <- cv_classo_fitting(fit = fit, X = expanded_z, y = y,
                                folds = folds, nfolds = nfolds)
-    expanded_z_normalized <-
-      normalization_additional_covariates(
-        additional_covariates = as.data.frame(as.matrix(expanded_z)),
-        p_x = dim(expanded_z)[2], intercept = TRUE)
-
-
 
     log_ratios <- fit$beta[, cvfit$cv$ibest]
 
@@ -338,7 +333,7 @@ second_stage <- function (Z,
 #'   (see \code{additional_covariates} from \code{\link{second_stage}})
 #' @param fit output of the function \code{\link{second_stage}}
 #' @param output string  either "raw", "probability" or "class" only relevant
-#'   classification tasks
+#'   classification tasks and glmnet in second stage
 #' @return a vector of \code{nrow(new_Z) + nrow(new_additional_covariates)}
 #'   predictions.
 #' @importFrom stats predict

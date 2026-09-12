@@ -33,8 +33,11 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
     if (is.null(fit$w_additional_covariates)) {
       fit$w_additional_covariates <- NULL
     }
+    if (is.null(fit$limit_active)) {
+      fit$limit_active <- FALSE
+    }
+    if (is.null(fit$intercept)) fit$intercept <- TRUE
     if (is.null(fit$rho)) fit$rho <- 0
-    if (is.null(fit$normalized)) fit$normalized <- FALSE
     # train on all but i-th fold (and use settings from fit):
     fit_folds[[i]] <- sparse_log_contrast(Z[-folds[[i]], ],
                                           y[-folds[[i]]],
@@ -45,7 +48,8 @@ cv_sparse_log_contrast <- function(fit, Z, y, folds = NULL, nfolds = 5,
                                             fit$w_additional_covariates,
                                           method = fit$method,
                                           rho = fit$rho,
-                                          normalized = fit$normalized)
+                                          limit_active = fit$limit_active,
+                                          intercept = fit$intercept)
     if (fit$refit) stop("Not yet supported.")
     if (fit$method == "regr" | is.null(fit$method)) {
       errs[, i] <- apply((predict_trac(

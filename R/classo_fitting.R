@@ -128,6 +128,7 @@ classo_fitting <- function(X, y, C = NULL, fraclist = NULL,
   lambda_classo <- prob$model_selection$PATHparameters$lambdas
   if (!classification) beta0 <- ybar - crossprod(beta[1:p, ], v)
   if (!classification) intercept <- TRUE
+  if (!intercept) beta0 <- rep(0, times = length(lambda_classo))
 
 
 

@@ -44,15 +44,11 @@
 #' @param intercept only works for classification! Should the intercept be
 #'   fitted. Default is TRUE, set to FALSE if the intercept should not be
 #'   included
-#' @param normalized if `TRUE` normalize the additional covariates.
-#'   In this case the calculation for each covariate / feature:
-#'   (X-X_mean) / ||X||_2
-#'   The weights will be transformed back to the original scale.
 #' @param rho value for huberized classification loss.
 #'   Default = -0.0.
-#' @param output only relevant for classification. String indicating whether
-#'   the raw score output or probability for class 1 should be used.
-#'   The probability is estimated with Platt’s probibalistic output
+#' @param limit_active (default = TRUE) should the solver stop optimizing if there are more
+#'   non-zero features than degrees of freedom (in this case the number of
+#'   observations)
 #'
 #' @return a list of length num_w, where each list element corresponds to the
 #'   solution for that choice of w.  Note that the fraclist depends on the
@@ -68,9 +64,8 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
                  w_additional_covariates = NULL,
                  w_compositional = NULL,
                  method = c("regr", "classif", "classif_huber"),
-                 intercept = TRUE, normalized = FALSE,
-                 rho = 0.0,
-                 output = c("raw", "probability")) {
+                 intercept = TRUE,
+                 rho = 0.0, limit_active = TRUE) {
   # input check
   n <- length(y)
   stopifnot(nrow(Z) == n)
@@ -92,8 +87,6 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     stop("every element of w must be positive.")
   }
   num_w <- length(w)
-  # partial matching for the output and method
-  output <- match.arg(output)
   method <- match.arg(method)
 
   if (!is.null(additional_covariates)) {
@@ -152,15 +145,7 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
   }
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(additional_covariates =
-                                              additional_covariates,
-                                            p_x = p_x,
-                                            intercept = intercept)
-      additional_covariates <- normalized_values$X
-    } else {
+
       # get the number of categorical variables if no normalization is applied
       categorical_list <- get_categorical_variables(additional_covariates)
       categorical <- categorical_list[["categorical"]]
@@ -169,7 +154,7 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
         additional_covariates[, categorical] <-
           transform_categorical_variables(additional_covariates, categorical)
       }
-    }
+
     # define the weights as 1 for every non compositional covariates
     # since c-lasso can now handle weights and we do not need to transform
     # them anymore and pass them directly to the solver
@@ -197,6 +182,14 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     # calculate the geom mean for the compositional data only
     v <- Matrix::colMeans(Z_clrA)
     M <- Matrix::t(Matrix::t(Z_clrA) - v)
+    # center the data to for intercept estimation later for regression
+    if (!is.null(additional_covariates)) {
+      additional_covariates <- as.matrix(additional_covariates)
+      if (!classification) {
+        add_means <- colMeans(additional_covariates)
+        additional_covariates <- sweep(additional_covariates, 2L, add_means, "-")
+      }
+    }
   }
 
 
@@ -244,7 +237,9 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     if (!is.null(w_compositional)) prob$formulation$w <- w_compositional
     if (!is.null(additional_covariates)) prob$formulation$w <- w_x
     # solve  it
-    prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
+    if (limit_active == TRUE) {
+      prob$model_selection$PATHparameters$n_active <- as.integer(nrow(X_classo))
+    }
     prob$solve()
     # extract outputs
 
@@ -272,6 +267,12 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
     lambda_classo <- prob$model_selection$PATHparameters$lambdas
     if (!classification) beta0 <- ybar - crossprod(gamma, v)
     if (!intercept) beta0 <- rep(0, times = length(lambda_classo))
+    if (!classification && !is.null(additional_covariates)) {
+      # Adjust for the additional covaraites as well
+      covariate_rows <- p + seq_len(p_x)
+      beta0 <- as.numeric(beta0) - as.numeric(crossprod(
+        delta[(t_size):(t_size + p_x - 1), , drop = FALSE], add_means))
+    }
     rownames(beta) <- rownames(A)
     if (!is.null(additional_covariates)) {
       beta <- rbind(beta, delta[(t_size):(t_size + p_x - 1), ])
@@ -283,39 +284,8 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
       rownames(gamma) <- rownames(alpha) <- c(colnames(A),
                                               colnames(additional_covariates))
       }
-      if (normalized && (normalized_values$n_numeric != 0)) {
-        # rescale betas for numerical values
-        # rescale only if beta not 0
-        beta <- rescale_betas(
-          beta = beta,
-          p_x = p_x,
-          p = p,
-          n_numeric = normalized_values$n_numeric,
-          categorical = normalized_values$categorical,
-          xs = normalized_values$xs,
-          xm = normalized_values$xm
-        )
-      }
     } else {
       rownames(gamma) <- rownames(alpha) <- colnames(A)
-    }
-    if (output == "probability") {
-      eps <- 1e-3
-      if (!is.null(A) & !is.null(additional_covariates)) {
-        A <- A[1:p, 1:(ncol(A) - p_x)]
-      }
-      hyper_prob <- get_probability_cv(Z = Z,
-                                       additional_covariates =
-                                         additional_covariates, A = A, y = y,
-                                       method = method,
-                                       w = w[[iw]],
-                                       w_additional_covariates =
-                                         w_additional_covariates,
-                                       fraclist = lambda_classo, nfolds = 5,
-                                       eps = eps,
-                                       n_lambda = length(lambda_classo))
-    } else {
-      hyper_prob <- NULL
     }
     fit[[iw]] <- list(
       beta0 = beta0,
@@ -330,8 +300,8 @@ trac <- function(Z, y, A, additional_covariates = NULL, fraclist = NULL,
       method = method,
       intercept = intercept,
       rho = rho,
-      hyper_prob = hyper_prob,
-      normalized = normalized
+      limit_active = limit_active,
+      w_compositional = w_compositional
     )
   }
   fit

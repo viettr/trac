@@ -17,7 +17,8 @@ second_stage(
   alpha = 0,
   w_additional = NULL,
   folds = NULL,
-  classo = FALSE
+  classo = FALSE,
+  disjoint_filter = FALSE
 )
 }
 \arguments{
@@ -53,12 +54,16 @@ Default NULL.}
 \item{alpha}{nudge the model to select on a higher or lower level of the
 tree. Only relevant for trac based models.}
 
-\item{w_additional}{weight for the additional covaraites}
+\item{w_additional}{weight for the additional covariates, does not work for
+c-lasso as stage II}
 
 \item{folds}{predefined folds (see \code{\link{cv_trac}})}
 
 \item{classo}{Should the solver c-lasso be used instead of glmnet? Usefull
 for smaller models}
+
+\item{disjoint_filter}{If the preselected coefficients live on a tree
+we can enforce that no log-ratios within the same branch are selected}
 }
 \value{
 list with: log_ratios: betas for log ratios; index: dataframe with
@@ -66,7 +71,9 @@ index of the pre selected coefficients and the log ratio name; A: taxonomic
 tree information; method: regression or classification; cv_glmnet:
 output of glmnet or c-lasso,
 useful for prediction; criterion: which criterion to
-be used to select lambda based on cv (cross validation)
+be used to select lambda based on cv (cross validation).
+Returns NULL with a warning if fewer than 2 variables survive pre-screening
+or filtering.
 }
 \description{
 Perform a two stage fitting procedure similar to the one proposed by

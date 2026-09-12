@@ -92,8 +92,7 @@ A_n <- colSums(A)
 
 # add additional covariates: one numerical and one categorical
 X <- data.frame(numeric_feature = rnorm(n = n),
-                categorical_feature = sample(c(0, 1), replace = TRUE,
-                                             size = n))
+                categorical_feature = sample(c(0, 1), replace = TRUE, size = n))
 
 X$categorical_feature <- as.factor(X$categorical_feature)
 
@@ -135,13 +134,11 @@ y_classif <- sign(y)
 test_that("trac regression on simulated data with additional covariates", {
   fit_regr_1 <- trac(Z, y, A, additional_covariates = X,
                         method = "regr",
-                        intercept = TRUE,
-                        normalized = TRUE)
+                        intercept = TRUE)
   expect_true(all(fit_regr_1[[1]]$alpha[, 2][c(p + 1, p + 5)] != 0))
   fit_regr_2 <- trac(Z, y, A, additional_covariates = X,
                      method = "regr",
                      intercept = TRUE,
-                     normalized = FALSE,
                      w_additional_covariates = rep(0.0001, ncol(X)))
   expect_true(all(fit_regr_2[[1]]$alpha[, 10][c(p + 1,
                                                p + 5, p + 7, p + 8)] != 0))
@@ -150,25 +147,24 @@ test_that("trac regression on simulated data with additional covariates", {
 test_that("trac classification on simulated data with additional covariates", {
   fit_classif_1 <- trac(Z, y_classif, A, additional_covariates = X,
                         method = "classif",
-                      intercept = TRUE,
-                      normalized = TRUE)
+                      intercept = TRUE)
   expect_true(all(fit_classif_1[[1]]$alpha[, 2][c(p + 1, p + 5)] != 0))
 
   fit_huber_1 <- trac(Z, y_classif, A, additional_covariates = X,
                       method = "classif_huber",
-                    intercept = TRUE, normalized = TRUE)
+                    intercept = TRUE)
   expect_true(all(fit_huber_1[[1]]$alpha[, 2][c(p + 1, p + 5)] != 0))
 
   fit_huber_2 <- trac(Z, y_classif, A, additional_covariates = X,
                       method = "classif_huber",
-                      intercept = TRUE, normalized = FALSE, rho = -1,
+                      intercept = TRUE, rho = -1,
                       w_additional_covariates = rep(0.0001, ncol(X)))
   expect_true(all(fit_huber_2[[1]]$alpha[, 20][c(p + 1,
                                                  p + 5, p + 7, p + 8)] != 0))
 
   fit_huber_3 <- trac(Z, y_classif, A, additional_covariates = X,
                       method = "classif_huber",
-                      intercept = TRUE, normalized = FALSE, rho = -10)
+                      intercept = TRUE, rho = -10)
   expect_true(all(fit_huber_3[[1]]$alpha[, 3][c(p + 1,
                                                  p + 5)] != 0))
 })
@@ -189,16 +185,16 @@ test_that("sparse log contrast regression on simulated data with
   expect_true(sum(fit_sparse_log_contrast$beta[, 30] != 0) < n)
   fit_sparse_log_contrast1 <-
     sparse_log_contrast(Z, y, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE)
+                        min_frac = 1e-2, nlam = 30)
   expect_true(all(fit_sparse_log_contrast1$beta[, 2][c(2, 3)] != 0))
   fit_sparse_log_contrast2 <-
     sparse_log_contrast(Z, y, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE,
+                        min_frac = 1e-2, nlam = 30,
                         w_additional_covariates = rep(0.01, ncol(X)))
   expect_true(all(fit_sparse_log_contrast2$beta[, 20][c(2, 3, p + 1)] != 0))
   fit_sparse_log_contrast3 <-
     sparse_log_contrast(Z, y, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = TRUE,
+                        min_frac = 1e-2, nlam = 30,
                         w_additional_covariates = rep(0.01, ncol(X)))
   expect_true(all(fit_sparse_log_contrast3$beta[, 20][c(2, 3, p + 1)] != 0))
 })
@@ -215,18 +211,18 @@ test_that("sparse log contrast classification on simulated data with
   expect_true(all(fit_sparse_log_contrast$beta[, 5][c(2, 3)] != 0))
   fit_sparse_log_contrast1 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE,
+                        min_frac = 1e-2, nlam = 30, 
                         method = "classif")
   expect_true(all(fit_sparse_log_contrast1$beta[, 5][c(2, 3)] != 0))
   fit_sparse_log_contrast2 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE,
+                        min_frac = 1e-2, nlam = 30, 
                         w_additional_covariates = rep(0.01, ncol(X)),
                         method = "classif")
   expect_true(all(fit_sparse_log_contrast2$beta[, 20][c(2, 3, p + 1)] != 0))
   fit_sparse_log_contrast3 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = TRUE,
+                        min_frac = 1e-2, nlam = 30, 
                         w_additional_covariates = rep(0.01, ncol(X)),
                         method = "classif")
   expect_true(all(fit_sparse_log_contrast3$beta[, 20][c(2, 3, p + 1)] != 0))
@@ -247,18 +243,18 @@ test_that("sparse log contrast robust classification on simulated data with
 
   fit_sparse_log_contrast1 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE,
+                        min_frac = 1e-2, nlam = 30,
                         method = "classif_huber")
   expect_true(all(fit_sparse_log_contrast1$beta[, 5][c(2, 3)] != 0))
   fit_sparse_log_contrast2 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = FALSE,
+                        min_frac = 1e-2, nlam = 30,
                         w_additional_covariates = rep(0.01, ncol(X)),
                         method = "classif_huber")
   expect_true(all(fit_sparse_log_contrast2$beta[, 20][c(2, 3, p + 1)] != 0))
   fit_sparse_log_contrast3 <-
     sparse_log_contrast(Z, y_classif, additional_covariates = X,
-                        min_frac = 1e-2, nlam = 30, normalized = TRUE,
+                        min_frac = 1e-2, nlam = 30,
                         w_additional_covariates = rep(0.01, ncol(X)),
                         method = "classif_huber")
   expect_true(all(fit_sparse_log_contrast3$beta[, 20][c(2, 3, p + 1)] != 0))

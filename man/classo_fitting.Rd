@@ -14,7 +14,6 @@ classo_fitting(
   method = c("regr", "classif", "classif_huber"),
   w = NULL,
   intercept = TRUE,
-  normalized = TRUE,
   rho = 0
 )
 }
@@ -42,11 +41,6 @@ length ncol(X) (default: all equal to 1).}
 \item{intercept}{only works for classification! Should the intercept be
 fitted. Default is TRUE, set to FALSE if the intercept should not be
 included}
-
-\item{normalized}{if \code{TRUE} normalize the additional covariates.
-In this case the calculation for each covariate / feature:
-(X-X_mean) / ||X||_2
-The weights will be transformed back to the original scale.}
 
 \item{rho}{value for huberized classification loss.
 Default = 0.0.}

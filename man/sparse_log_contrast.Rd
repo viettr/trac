@@ -15,8 +15,8 @@ sparse_log_contrast(
   method = c("regr", "classif", "classif_huber"),
   w_additional_covariates = NULL,
   intercept = TRUE,
-  normalized = TRUE,
-  rho = 0
+  rho = 0,
+  limit_active = TRUE
 )
 }
 \arguments{
@@ -47,13 +47,12 @@ length ncol(additional_covariates) (default: all equal to 1).}
 fitted. Default is TRUE, set to FALSE if the intercept should not be
 included}
 
-\item{normalized}{if \code{TRUE} normalize the additional covariates.
-In this case the calculation for each covariate / feature:
-(X-X_mean) / ||X||_2
-The weights will be transformed back to the original scale.}
-
 \item{rho}{value for huberized classification loss.
 Default = 0.0.}
+
+\item{limit_active}{(default = TRUE) should the solver stop optimizing if there are more
+non-zero features than degrees of freedom (in this case the number of
+observations)}
 }
 \description{
 Solves the constrained lasso problem using the CLASSO module

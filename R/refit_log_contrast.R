@@ -110,7 +110,6 @@ refit_sparse_log_contrast_classif <- function(fit, i_selected = NULL, Z, y,
   C <- matrix(C, nrow = 1)
   # extract meta information from the fit object
   rho <- fit$rho
-  normalized <- fit$normalized
   intercept <- fit$intercept
 
   # Transformation of the additional covariates
@@ -126,15 +125,6 @@ refit_sparse_log_contrast_classif <- function(fit, i_selected = NULL, Z, y,
 
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(additional_covariates =
-                                              additional_covariates,
-                                            p_x = p_x,
-                                            intercept = intercept)
-      additional_covariates <- normalized_values$X
-    } else {
       # get the number of categorical variables if no normalization is applied
       categorical_list <- get_categorical_variables(additional_covariates)
       categorical <- categorical_list[["categorical"]]
@@ -143,7 +133,7 @@ refit_sparse_log_contrast_classif <- function(fit, i_selected = NULL, Z, y,
         additional_covariates[, categorical] <-
           transform_categorical_variables(additional_covariates, categorical)
       }
-    }
+    
   }
 
 
@@ -182,8 +172,6 @@ refit_sparse_log_contrast_classif <- function(fit, i_selected = NULL, Z, y,
   prob$model_selection$LAMfixedparameters$rescaled_lam <- TRUE
   prob$model_selection$LAMfixedparameters$lam <- 0.0
 
-
-
   # solve it
   prob$solve()
   # extract outputs
@@ -203,8 +191,7 @@ refit_sparse_log_contrast_classif <- function(fit, i_selected = NULL, Z, y,
        refit = TRUE,
        method = fit$method,
        intercept = intercept,
-       rho = rho,
-       normalized = normalized)
+       rho = rho)
 }
 
 
@@ -257,7 +244,6 @@ refit_sparse_log_contrast_reg <- function(fit, i_selected = NULL, Z, y,
   C <- matrix(C, nrow = 1)
   # extract meta information from the fit object
   rho <- fit$rho
-  normalized <- fit$normalized
   intercept <- TRUE
 
   # Transformation of the additional covariates
@@ -273,15 +259,6 @@ refit_sparse_log_contrast_reg <- function(fit, i_selected = NULL, Z, y,
 
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(additional_covariates =
-                                              additional_covariates,
-                                            p_x = p_x,
-                                            intercept = intercept)
-      additional_covariates <- normalized_values$X
-    } else {
       # get the number of categorical variables if no normalization is applied
       categorical_list <- get_categorical_variables(additional_covariates)
       categorical <- categorical_list[["categorical"]]
@@ -290,7 +267,7 @@ refit_sparse_log_contrast_reg <- function(fit, i_selected = NULL, Z, y,
         additional_covariates[, categorical] <-
           transform_categorical_variables(additional_covariates, categorical)
       }
-    }
+    
   }
 
 
@@ -344,8 +321,7 @@ refit_sparse_log_contrast_reg <- function(fit, i_selected = NULL, Z, y,
        refit = TRUE,
        method = fit$method,
        intercept = intercept,
-       rho = rho,
-       normalized = normalized)
+       rho = rho)
 }
 
 
@@ -392,7 +368,6 @@ refit_sparse_log_contrast_classo <- function(fit, Z, y,
   C <- matrix(C, nrow = 1)
   # extract meta information from the fit object
   rho <- fit$rho
-  normalized <- fit$normalized
   intercept <- fit$intercept
 
   # Transformation of the additional covariates
@@ -408,17 +383,6 @@ refit_sparse_log_contrast_classo <- function(fit, Z, y,
 
   # normalize the non-compositional data if wanted
   if (!is.null(additional_covariates)) {
-    if (normalized) {
-      # call the normalization helper function
-      normalized_values <-
-        normalization_additional_covariates(
-          additional_covariates =
-            additional_covariates,
-          p_x = p_x,
-          intercept = intercept
-        )
-      additional_covariates <- normalized_values$X
-    } else {
       # get the number of categorical variables if no normalization is applied
       categorical_list <-
         get_categorical_variables(additional_covariates)
@@ -428,7 +392,7 @@ refit_sparse_log_contrast_classo <- function(fit, Z, y,
         additional_covariates[, categorical] <-
           transform_categorical_variables(additional_covariates, categorical)
       }
-    }
+    
   }
 
 

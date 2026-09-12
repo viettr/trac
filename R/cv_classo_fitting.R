@@ -39,7 +39,8 @@ cv_classo_fitting <- function(fit, X, y, folds = NULL, nfolds = 5,
                                       fraclist = fit$fraclist,
                                       w = fit$w,
                                       method = fit$method,
-                                      rho = fit$rho)
+                                      rho = fit$rho,
+                                     intercept = fit$intercept)
     if (fit$refit) stop("Not yet supported.")
     if (fit$method == "regr" | is.null(fit$method)) {
       errs[, i] <- apply((predict_trac(
