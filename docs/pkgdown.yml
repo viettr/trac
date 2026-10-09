@@ -1,12 +1,9 @@
-pandoc: '3.2'
-pkgdown: 2.1.1
+pandoc: '2.18'
+pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   trac-classification-pipeline: trac-classification-pipeline.html
   trac-example: trac-example.html
   trac-installation: trac-installation.html
-<<<<<<< HEAD
-last_built: 2024-11-26T13:43Z
-=======
-last_built: 2024-11-26T14:52Z
->>>>>>> 190d6c3123281634d87692e988db5d42ab94ea90
+last_built: 2022-08-26T15:27Z
+

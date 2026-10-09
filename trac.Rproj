@@ -1,4 +1,5 @@
 Version: 1.0
+ProjectId: 8a0b1396-0368-4d64-9212-fe00ecd3ddd5
 
 RestoreWorkspace: No
 SaveWorkspace: No
@@ -20,3 +21,7 @@ BuildType: Package
 PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source
 PackageRoxygenize: rd,collate,namespace
+
+PythonType: conda
+PythonVersion: 3.9.12
+PythonPath: C:/Users/ru98wan/Anaconda3/envs/trac/python.exe
