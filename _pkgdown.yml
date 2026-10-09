@@ -1,3 +1,7 @@
+url: ~
+template:
+  bootstrap: 5
+
 reference:
 - title: "Preprocessing"
   desc: "Functions for preparing your data for `trac`."
@@ -51,4 +55,3 @@ reference:
     Helper functions
 - contents:
   - make_folds_stratified
-

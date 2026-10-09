@@ -22,7 +22,7 @@ plot_cv_trac <- function(cvfit_trac, iw = NULL, superimpose = TRUE) {
                    ylab = "Cross-validation Error",
                    type = "n", xlim = xrang, ylim = yrang)
     for (iw in seq_along(x)) {
-      ggb:::error_bars(x[[iw]]$nonzeros,
+      error_bars(x[[iw]]$nonzeros,
                        x[[iw]]$m - x[[iw]]$se,
                        x[[iw]]$m + x[[iw]]$se, width = 0.01,
                        col = "darkgrey")
@@ -45,7 +45,7 @@ plot_cv_trac_single_w <- function(cvfit_trac_single_w) {
   graphics::axis(3, at = log(x$fraclist), labels = paste(x$nonzero), srt = 90,
                  adj = 0)
   graphics::mtext("Number of nonzero gamma", 3, 4, cex = 1.2)
-  ggb:::error_bars(log(x$fraclist), x$m - x$se, x$m + x$se, width = 0.01,
+  error_bars(log(x$fraclist), x$m - x$se, x$m + x$se, width = 0.01,
                    col = "darkgrey")
   graphics::points(log(x$fraclist), x$m, col = 2, pch = 19)
   graphics::abline(v = log(x$lambda_best), lty = 3)
@@ -77,4 +77,16 @@ plot_trac_path <- function(fit, iw = 1, coef = c("alpha", "beta", "gamma")) {
     ggplot2::scale_x_log10() +
     ggplot2::theme(legend.position = "none") +
     ggplot2::labs(y = coef, x = "Fraction of lambda_max")
+}
+
+
+# Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/plot_cv.R#L30
+error_bars <- function (x, upper, lower, width = 0.02, ...) {
+  # this function came from hierNet package
+  xlim <- range(x)
+  barw <- diff(xlim) * width
+  graphics::segments(x, upper, x, lower, ...)
+  graphics::segments(x - barw, upper, x + barw, upper, ...)
+  graphics::segments(x - barw, lower, x + barw, lower, ...)
+  range(upper, lower)
 }

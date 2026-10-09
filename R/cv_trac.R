@@ -27,7 +27,7 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
     if (stratified) {
       folds <- make_folds_stratified(n, nfolds, y)
     } else {
-      folds <- ggb:::make_folds(n, nfolds)
+      folds <- make_folds(n, nfolds)
     }
   } else {
     nfolds <- length(folds)
@@ -107,8 +107,21 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
   )
 }
 
+# Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/cv_ggb.R#L81
+make_folds <- function(n, nfolds) {
+  nn <- round(n / nfolds)
+  sizes <- rep(nn, nfolds)
+  sizes[nfolds] <- sizes[nfolds] + n - nn * nfolds
+  b <- c(0, cumsum(sizes))
+  ii <- sample(n)
+  folds <- list()
+  for (i in seq(nfolds))
+    folds[[i]] <- ii[seq(b[i] + 1, b[i + 1])]
+  folds
+}
+
 #' This function creates stratified folds for cross validation for unbalanced
-#' data. The code is adopted from ggb:::make_folds
+#' data. The code is adopted from ggb make_folds
 #'
 #' @param n number of observations
 #' @param nfolds number of folds

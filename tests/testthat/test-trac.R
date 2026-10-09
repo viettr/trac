@@ -133,6 +133,7 @@ y <- 50 + Z_mod[, (p + 1)] - Z_mod[, (p + 5)] + X[, 1] +
 y_classif <- sign(y)
 
 test_that("trac regression on simulated data with additional covariates", {
+  skip_if_no_classo()
   fit_regr_1 <- trac(Z, y, A, additional_covariates = X,
                         method = "regr",
                         intercept = TRUE,
@@ -148,6 +149,8 @@ test_that("trac regression on simulated data with additional covariates", {
 
 })
 test_that("trac classification on simulated data with additional covariates", {
+  skip_if_no_classo()
+
   fit_classif_1 <- trac(Z, y_classif, A, additional_covariates = X,
                         method = "classif",
                       intercept = TRUE,

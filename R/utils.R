@@ -263,7 +263,7 @@ get_probability_cv <- function(Z, additional_covariates, A, y, method, w,
     }
   }
   # create folds
-  folds <- ggb:::make_folds(n, nfolds)
+  folds <- make_folds(n, nfolds)
   # pre-create matrix with decision values
   decision_values <- matrix(ncol = n_lambda)
   label <- c()
@@ -441,4 +441,19 @@ probability_transform <- function(yhat, A, B) {
   prob[fApB_index] <- exp(-fApB[fApB_index]) / (1 + exp(-fApB[fApB_index]))
   prob[!fApB_index] <- 1 / (1 + exp(fApB[!fApB_index]))
   prob
+}
+
+
+# Source: https://github.com/jacobbien/ggb/blob/76a00af23715c349e81a50e3fa646123f9f4c80d/R/cv_ggb.R#L81
+
+make_folds <- function(n, nfolds) {
+  nn <- round(n / nfolds)
+  sizes <- rep(nn, nfolds)
+  sizes[nfolds] <- sizes[nfolds] + n - nn * nfolds
+  b <- c(0, cumsum(sizes))
+  ii <- sample(n)
+  folds <- list()
+  for (i in seq(nfolds))
+    folds[[i]] <- ii[seq(b[i] + 1, b[i + 1])]
+  folds
 }
