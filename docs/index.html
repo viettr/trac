@@ -58,11 +58,11 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="trac-tree-based-aggregation-of-compositional-data">trac: Tree-based Aggregation of Compositional Data<a class="anchor" aria-label="anchor" href="#trac-tree-based-aggregation-of-compositional-data"></a>
 </h1></div>
-<p>This R package, called <code>trac</code>, performs tree-based aggregation of compositional data with a particular focus on microbiome data. Users are encouraged to visit the <a href="https://jacobbien.github.io/trac/" class="external-link">package’s website</a> and a <a href="https://jacobbien.github.io/trac/articles/trac-example.html" class="external-link">vignette</a>. It implements the method proposed in <a href="https://www.biorxiv.org/content/10.1101/2020.09.01.277632v1" class="external-link">Tree-Aggregated Predictive Modeling of Microbiome Data</a>. It uses internally the <a href="https://github.com/Leo-Simpson/c-lasso" class="external-link">c-lasso</a> solver in Python (described in <a href="https://joss.theoj.org/papers/10.21105/joss.02844" class="external-link">this paper</a>). The package also includes a fast solver for standard sparse log-contrast regression.</p>
+<p>This R package, called <code>trac</code>, performs tree-based aggregation of compositional data with a particular focus on microbiome data. Users are encouraged to visit the <a href="https://viettran.de/trac/">package’s website</a> and a <a href="https://viettran.de/trac/articles/trac-example.html">vignette</a>. It implements the method proposed in <a href="https://www.biorxiv.org/content/10.1101/2020.09.01.277632v1" class="external-link">Tree-Aggregated Predictive Modeling of Microbiome Data</a>. It uses internally the <a href="https://github.com/Leo-Simpson/c-lasso" class="external-link">c-lasso</a> solver in Python (described in <a href="https://joss.theoj.org/papers/10.21105/joss.02844" class="external-link">this paper</a>). The package also includes a fast solver for standard sparse log-contrast regression.</p>
 <p>The easiest way to install <code>trac</code> is by using the <a href="https://cran.r-project.org/web/packages/devtools/index.html" class="external-link">devtools</a> R package (if not already installed, open R and run <code>install.packages("devtools")</code>).</p>
 <p>To install <code>trac</code>, run</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"jacobbien/trac"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"bio-datascience/trac"</span><span class="op">)</span></span></code></pre></div>
 <p>in R.</p>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -87,6 +87,16 @@
 </ul>
 </div>
 
+<div class="developers">
+<h2 data-toc-skip>Developers</h2>
+<ul class="list-unstyled">
+<li>Jacob Bien <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Christian Mueller <br><small class="roles"> Author </small>  </li>
+<li>Xiaohan Yan <br><small class="roles"> Author </small>  </li>
+<li>Viet Tran <br><small class="roles"> Author </small>  </li>
+</ul>
+</div>
+
 
 
   </aside>
@@ -94,7 +104,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by .</p>
+  <p>Developed by Jacob Bien, Christian Mueller, Xiaohan Yan, Viet Tran.</p>
 </div>
 
 <div class="pkgdown-footer-right">
