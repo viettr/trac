@@ -73,7 +73,8 @@ output of glmnet or c-lasso,
 useful for prediction; criterion: which criterion to
 be used to select lambda based on cv (cross validation).
 Returns NULL with a warning if fewer than 2 variables survive pre-screening
-or filtering.
+or filtering, or if only one log-ratio and no additional covariates remain
+(e.g. two parts, or a single disjoint pair after \code{disjoint_filter}).
 }
 \description{
 Perform a two stage fitting procedure similar to the one proposed by

@@ -26,3 +26,20 @@ txt <- read_file("trac-classification-pipeline.Rmd") %>%
   str_replace_all("\\(figure/", "(")
 write_file(txt, file = "trac-classification-pipeline.Rmd")
 rmarkdown::render("trac-classification-pipeline.Rmd")
+
+
+knitr::knit("trac-m2-regression.Rmd.orig", output = "trac-m2-regression.Rmd")
+system("mv figure/* .; rmdir figure")
+txt <- read_file("trac-m2-regression.Rmd") %>%
+  str_replace_all("\\(figure/", "(")
+write_file(txt, file = "trac-m2-regression.Rmd")
+rmarkdown::render("trac-m2-regression.Rmd")
+
+
+
+knitr::knit("trac-m2-classification.Rmd.orig", output = "trac-m2-classification.Rmd")
+system("mv figure/* .; rmdir figure")
+txt <- read_file("trac-m2-classification.Rmd") %>%
+  str_replace_all("\\(figure/", "(")
+write_file(txt, file = "trac-m2-classification.Rmd")
+rmarkdown::render("trac-m2-classification.Rmd")

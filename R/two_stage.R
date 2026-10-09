@@ -46,7 +46,8 @@
 #'   useful for prediction; criterion: which criterion to
 #'   be used to select lambda based on cv (cross validation).
 #'   Returns NULL with a warning if fewer than 2 variables survive pre-screening
-#'   or filtering.
+#'   or filtering, or if only one log-ratio and no additional covariates remain
+#'   (e.g. two parts, or a single disjoint pair after \code{disjoint_filter}).
 #' @export
 
 second_stage <- function (Z,
@@ -143,6 +144,20 @@ second_stage <- function (Z,
   # Guard against < 1 row after expand.grid filtering (edge case)
   if (nrow(index) == 0) {
     warning("No valid log-ratio pairs could be formed. Returning NULL.")
+    return(NULL)
+  }
+
+  # A second stage needs at least two columns (log-ratios plus covariates):
+  # glmnet stops on a single column, and a single log-ratio without
+  # covariates (e.g. two parts, or one pair left by disjoint_filter) is
+  # already the first-stage model
+  n_covariates <- if (is.null(additional_covariates)) 0 else NCOL(additional_covariates)
+  if (nrow(index) + n_covariates < 2) {
+    warning(
+      "Only one log-ratio and no additional covariates remain",
+      if (!is.null(A) & disjoint_filter == TRUE) " after disjoint_filter",
+      ". A second stage doesn't make sense. Returning NULL."
+    )
     return(NULL)
   }
 
