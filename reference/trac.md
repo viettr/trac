@@ -1,0 +1,121 @@
+# Perform tree-based aggregation
+
+Solves the weighted aggregation problem using the CLASSO module in
+Python. The optimization problems are:
+
+## Usage
+
+``` r
+trac(
+  Z,
+  y,
+  A,
+  additional_covariates = NULL,
+  fraclist = NULL,
+  nlam = 20,
+  min_frac = 1e-04,
+  w = NULL,
+  w_additional_covariates = NULL,
+  w_compositional = NULL,
+  method = c("regr", "classif", "classif_huber"),
+  intercept = TRUE,
+  rho = 0,
+  limit_active = TRUE
+)
+```
+
+## Arguments
+
+- Z:
+
+  n by p matrix containing log(X)
+
+- y:
+
+  n vector (response)
+
+- A:
+
+  p by (t_size-1) binary matrix giving tree structure (t_size is the
+  total number of nodes and the -1 is because we do not include the
+  root)
+
+- additional_covariates:
+
+  n by p' matrix containing additional covariates / features
+
+- fraclist:
+
+  (optional) vector of tuning parameter multipliers. Or a list of length
+  num_w of such vectors. Should be in (0, 1\].
+
+- nlam:
+
+  number of tuning parameters (ignored if fraclist non-NULL)
+
+- min_frac:
+
+  smallest value of tuning parameter multiplier (ignored if fraclist
+  non-NULL)
+
+- w:
+
+  vector of positive weights of length t_size - 1 (default: all equal to
+  1). Or a list of num_w such vectors.
+
+- w_additional_covariates:
+
+  vector of positive weights of length ncol(additional_covariates)
+  (default: all equal to 1).
+
+- w_compositional:
+
+  vector of positive weights of length ncol(Z) (default: all equal to
+  1).
+
+- method:
+
+  string which estimation method to use should be in ("regr", "classif",
+  "classif_huber")
+
+- intercept:
+
+  only works for classification! Should the intercept be fitted. Default
+  is TRUE, set to FALSE if the intercept should not be included
+
+- rho:
+
+  value for huberized classification loss. Default = -0.0.
+
+- limit_active:
+
+  (default = TRUE) should the solver stop optimizing if there are more
+  non-zero features than degrees of freedom (in this case the number of
+  observations)
+
+## Value
+
+a list of length num_w, where each list element corresponds to the
+solution for that choice of w. Note that the fraclist depends on the
+choice of w. beta0 is the intercept; beta is the coefficient vector on
+the scale of leaves of the tree; gamma is the coefficient vector on
+nodes of the tree where the features are sums of logs of the
+leaf-features within that node's subtree; alpha is the coefficient
+vector on nodes of the tree where the features are log of the geometric
+mean of leaf-features within that node's subtree.
+
+## Details
+
+Regression: minimize_beta, beta0, gamma 1/(2n) \|\| y - beta0 1_n -
+Z_clr beta \|\|^2 + lamda_max \* frac \|\| W \* gamma \|\|\_1 subject to
+beta = A gamma, 1_p^T beta = 0 where W = diag(w) with w_u \> 0 for all u
+
+Classification: minimize_beta, beta0, gamma max(1 - y_i(beta0 + Z_clr_i
+\* beta), 0)^2 + lambda_max \* frac \|\| W \* gamma \|\|\_1 subject to
+beta = A gamma, 1_p^T beta = 0 where W = diag(w) with w_u \> 0 for all u
+
+Classification Huberized: see C2 formulation in c-lasso
+
+Observe that the tuning parameter is specified through "frac", the
+fraction of lamda_max (which is the smallest value for which gamma is
+nonzero).
