@@ -8,7 +8,7 @@ predict_trac(
   fit,
   new_Z,
   new_additional_covariates = NULL,
-  output = c("raw", "probability", "class")
+  output = c("raw", "class")
 )
 }
 \arguments{
@@ -19,7 +19,7 @@ predict_trac(
 \item{new_additional_covariates}{a new data matrix
 (see \code{additional_covariates} from \code{\link{trac}})}
 
-\item{output}{string  either "raw", "probability" or "class" only relevant
+\item{output}{string  either "raw" or "class" only relevant for
 classification tasks}
 }
 \value{

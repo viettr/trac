@@ -8,7 +8,7 @@ predict_sparse_log_contrast(
   fit,
   new_Z,
   new_additional_covariates = NULL,
-  output = c("raw", "probability", "class")
+  output = c("raw", "class")
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ predict_sparse_log_contrast(
 (see \code{additional_covariates}
 from \code{\link{sparse_log_contrast}})}
 
-\item{output}{string  either "raw", "probability" or "class" only relevant
+\item{output}{string  either "raw" or "class" only relevant
 classification tasks}
 }
 \value{

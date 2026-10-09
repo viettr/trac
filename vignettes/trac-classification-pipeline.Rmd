@@ -18,35 +18,41 @@ output = "trac-classification-pipeline.Rmd")
 
 
 
+
 # trac classification pipeline
 
 
 
-```r
+``` r
 library(tidyverse) # data wrangling and visualization
 library(phyloseq) # microbiome data wrangling
 library(trac) # trac
 library(kableExtra) # creating tables in rmarkdown
 ```
 
-This tutorial aims to provide insight into a possible analysis pipeline. We will start with a [phyloseq object](https://joey711.github.io/phyloseq/) [@mcmurdie2013phyloseq]. This `phyloseq object` should contain at least the OTU/ASV counts and the taxonomic assignment for each OTU/ASV.
+This tutorial aims to provide insight into a analysis pipeline. We will start with a [phyloseq object](https://joey711.github.io/phyloseq/) [@mcmurdie2013phyloseq]. This `phyloseq object` should contain at least the OTU/ASV counts and the taxonomic assignment for each OTU/ASV.
 
 
 
-```r
+``` r
 knitr::include_graphics("figures/trac_workflow.png")
 ```
 
-<img src="figures/trac_workflow.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" width="400px" />
+<div class="figure">
+<img src="figures/trac_workflow.png" alt="plot of chunk unnamed-chunk-3" width="400px" />
+<p class="caption">plot of chunk unnamed-chunk-3</p>
+</div>
 
 To demonstrate how to use trac, we use the dataset of [@yatsunenko2012human] from the [MLRepo](https://knights-lab.github.io/MLRepo/docs/yatsunenko_malawi_venezuela.html){.uri}. [@vangay2019microbiome]. The given OTU labels are matched with the greengenes 97 database [@mcdonald2012improved]. OTUs appearing in less than 10% of the samples are excluded and only bacteria are included. The concrete `phyloseq object` (`malawi`) contains:
 
 -   `otu_table`: contains 54 observations and 5008 OTUs
 -   `tax_table`: contains the taxonomic assignments of the OTUs. The rownames correspond to the columns of the `otu_table`
--   `sam_data`: contains the to variable of interest (Vars) and additional non-compositional covariates age (numeric) and sex (factor)
+-   `sam_data`: contains the variable of interest (`Var`) and the additional non-compositional covariates age (numeric) and sex (factor)
+
+This vignette covers the preprocessing and the first stage of the trac-m workflow: `trac` and sparse log-contrast models for the microbiome alone.  The additional covariates, a second stage with pairwise log-ratios and inference on held-out data are shown in [trac-m2 for classification](trac-m2-classification.html).
 
 
-```r
+``` r
 data("malawi")
 ```
 
@@ -64,7 +70,7 @@ The workflow to generate the A matrix based on the `phyloseq` object could be:
 6.  Call `phylo_to_A` to generate the A matrix
 
 
-```r
+``` r
 # 1. extract the taxonomic table from the phyloseq object
 tax <- malawi@tax_table@.Data
 
@@ -105,9 +111,20 @@ A <- phylo_to_A(tree1)
 trac expects log transformed values as inputs. Since $log(0)$ is undefined we need to add a pseudo-count (e.g. 1)
 
 
-```r
+``` r
 log_pseudo <- function(x, pseudo_count = 1) log(x + pseudo_count)
 z <- log_pseudo(malawi@otu_table@.Data)
+```
+
+## Align the columns of z with the rows of A
+
+`tax_table_to_phylo` orders the leaves by the tree, so the rows of `A` are not in the column order of the OTU table. `trac` pairs column $j$ of `z` with row $j$ of `A` without checking names; a misaligned model still fits and can even predict well, but its clades are built from the wrong OTUs. The rownames of `A` end in the OTU id, so reorder `z` and check it:
+
+
+``` r
+leaf_otu <- sub(".*::", "", rownames(A))
+z <- z[, match(leaf_otu, colnames(z))]
+stopifnot(identical(colnames(z), leaf_otu))
 ```
 
 # Model fitting
@@ -117,16 +134,11 @@ z <- log_pseudo(malawi@otu_table@.Data)
 First we split the data into a train-test split to evaluate the predictive performance at the end. Other more advanced methods can be used as well.
 
 
-```r
+``` r
 # extact the label
 y <- malawi@sam_data$Var
 # transform depended variable to -1 and 1
 y <- (y == "Malawi") * 2 - 1
-# set additional covarariates to data.frame, delete the label and set the binary variable
-# to factor --> trac will automatically transform it internally to {0, 1}
-additional_covariates <- data.frame(malawi@sam_data) %>%
-  select(-Var) %>%
-  mutate(sex = as.factor(sex))
 
 # define seed for reproducibility
 set.seed(1)
@@ -139,18 +151,16 @@ ytr <- y[tr]
 yte <- y[-tr]
 ztr <- z[tr, ]
 zte <- z[-tr, ]
-additional_covariates_tr <- additional_covariates[tr, ]
-additional_covariates_te <- additional_covariates[-tr, ]
 ```
 
 ## Fit model: Classification with squared hinge loss
 
-We will fit the model on the train data. The task is to predict if the person lives in Venezuela or Malawi therefore a binary classification task. It is possible to specify this by the argument `method`. The method will solve the lambda path and selecting the optimal tuning parameter $\lambda$ is a crucial. The path for the coefficient can be plotted with `plot_trac_path`.
+We will fit the model on the train data. The task is to predict if the person lives in Venezuela or Malawi therefore a binary classification task. Specify this by the argument `method`. The method will solve the lambda path and selecting the optimal tuning parameter $\lambda$. The path for the coefficient can be plotted with `plot_trac_path`.
 
 
-```r
+``` r
 # fit trac with c1
-fit <- trac(ztr, ytr, A = A, min_frac = 1e-1, nlam = 10, method = "classif")
+fit <- trac(ztr, ytr, A = A, min_frac = 3e-2, nlam = 10, method = "classif")
 plot_trac_path(fit)
 ```
 
@@ -159,31 +169,31 @@ plot_trac_path(fit)
 As a baseline we can fit a sparse log-contrast model on the OTU level as well.
 
 
-```r
-fit_log_contrast <- sparse_log_contrast(Z = ztr, y = ytr, min_frac = 1e-1,
-                                        nlam = 10, method = "classif")
+``` r
+fit_log_contrast <-
+  sparse_log_contrast(Z = ztr, y = ytr, min_frac = 3e-2,
+                      nlam = 10, method = "classif")
 ```
 
-We will fit another model with the additional non-compositional covariates for comparison. It is possible to assign different weights for the additional covariates. Smaller values (`w_additional_covariates`) will force the model to include the covariate.
+One can usually not scale the compositional data, but an alternative is to set penalty weights, such that the sparse log-contrast model does not favours taxa whose log-abundances vary a lot, because they can enter with small coefficients. Weighting each taxon's penalty by its standard deviation in the training data is the same as standardising the taxa, while the zero-sum constraint stays on the original coefficients. `sparse_log_contrast()` has no argument for weights on the taxa. The same model is `trac()` with an identity aggregation matrix, whose argument `w` sets one penalty weight per taxon; with `w` left at 1 it reproduces `sparse_log_contrast()` exactly.
 
 
-```r
-fit_add_covariates <- trac(Z = ztr, y = ytr, A = A,
-                           additional_covariates = additional_covariates_tr,
-                           min_frac = 1e-1, nlam = 10, method = "classif",
-                           normalized = TRUE,
-                           w_additional_covariates = c(0.001, 0.001))
-plot_trac_path(fit_add_covariates)
+``` r
+# trac centres each sample (clr), so take the standard deviations after centring
+w_taxa <- apply(ztr - rowMeans(ztr), 2, sd)
+A_leaf <- as(Matrix::Diagonal(ncol(ztr)), "CsparseMatrix")
+dimnames(A_leaf) <- list(colnames(ztr), colnames(ztr))
+fit_log_contrast_fair <-
+  trac(ztr, ytr, A = A_leaf, w = w_taxa,
+       min_frac = 3e-2, nlam = 10, method = "classif")
 ```
-
-![plot of chunk plot_trac_classification_path_add_covariates](plot_trac_classification_path_add_covariates-1.png)
 
 ## Find optimal hyper-parameter
 
-The optimal $\lambda$ can be determined with cross-validation for the 3 models.
+The optimal $\lambda$ can be determined with cross-validation for each model.
 
 
-```r
+``` r
 set.seed(1)
 # run cross validation
 cvfit <- cv_trac(fit, Z = ztr, y = ytr, A = A)
@@ -198,43 +208,23 @@ plot_cv_trac(cvfit)
 ![plot of chunk plot_trac_classification_cv](plot_trac_classification_cv-1.png)
 
 
-```r
+``` r
 set.seed(1)
-cvfit_log_contrast <- cv_sparse_log_contrast(fit_log_contrast, Z = ztr, y = ytr)
+cvfit_log_contrast <-
+  cv_sparse_log_contrast(fit_log_contrast, Z = ztr, y = ytr)
 #> fold 1
 #> fold 2
 #> fold 3
 #> fold 4
 #> fold 5
-```
-
-
-```r
 set.seed(1)
-cvfit_add_covariates <- cv_trac(fit_add_covariates, Z = ztr, y = ytr, A = A,
-                                additional_covariates =
-                                  additional_covariates_tr)
+cvfit_log_contrast_fair <-
+  cv_trac(fit_log_contrast_fair, Z = ztr, y = ytr, A = A_leaf)
 #> fold 1
 #> fold 2
 #> fold 3
 #> fold 4
 #> fold 5
-plot_cv_trac(cvfit_add_covariates)
-```
-
-![plot of chunk plot_trac_classification_path_add_covariates_cv](plot_trac_classification_path_add_covariates_cv-1.png)
-
-## Optional: Two-stage procedure
-
-The cross-validation plot of trac for classification without additional covariates suggests that the model with minimum loss selects 3 components. We can build all possible log--ratios based on the three components and run another lasso to select the important pairs. The function `second_stage` is a wrapper for doing this kind of tasks. The function internally builds all possible log-ratio pairs and uses lasso calculated by `glmnet` to select the predictive log-ratios. To determine the optimal $\lambda$ it uses cross-validation.
-
-
-```r
-set.seed(1)
-two_stage <- second_stage(Z = ztr, A = A, y = ytr,
-                          betas = fit[[1]]$alpha[, cvfit$cv[[1]]$ibest],
-                          method = "classif",
-                          criterion = "1se")
 ```
 
 # Reporting
@@ -242,36 +232,27 @@ two_stage <- second_stage(Z = ztr, A = A, y = ytr,
 ## Evaluation of predictive performance
 
 
-```r
+``` r
 # get predicted values
+
 # trac
 yhat_te <- predict_trac(fit, new_Z = zte)
-# trac with additional covariates
-yhat_te_add_covariates <- predict_trac(fit_add_covariates, new_Z = zte,
-                                       new_additional_covariates = additional_covariates_te)
 # sparse log-contrast classification
-yhat_te_log_contrast <- predict_trac(list(fit_log_contrast), new_Z = zte)
-
-# two-stage procedure
-yhat_te_two <- predict_second_stage(new_Z = zte, fit = two_stage, output = "class")
-yhat_te_two <- as.numeric(yhat_te_two)
+yhat_te_log_contrast <-
+  predict_trac(list(fit_log_contrast), new_Z = zte)
 
 # calculate missclassification error for each methods
 # trac classification
 testerr <- colMeans(sign(yhat_te[[1]]) != yte)
 nnz <- colSums(fit[[1]]$alpha != 0)
-# trac with additional covariates
-testerr_add_covariates <- colMeans(sign(yhat_te[[1]]) != yte)
-nnz_add_covariates <- colSums(fit_add_covariates[[1]]$alpha != 0)
+
 # sparse log-contrast classification
 testerr_log_contrast <- colMeans(sign(yhat_te_log_contrast[[1]]) != yte)
 nnz_log_contrast <- colSums(fit_log_contrast$beta != 0)
-# two-stage procedure
-testerr_two <- mean(yhat_te_two != yte)
 ```
 
 
-```r
+``` r
 # plot missclassification error of test split based on number of
 # selected taxa (trac)
 tibble(nnz = nnz, testerr = testerr) %>%
@@ -283,7 +264,7 @@ tibble(nnz = nnz, testerr = testerr) %>%
 ![plot of chunk plot_trac_classification_testerr](plot_trac_classification_testerr-1.png)
 
 
-```r
+``` r
 # plot missclassification error of test split based on number of
 # selected taxa (sparse log contrast)
 tibble(nnz = nnz_log_contrast, testerr = testerr_log_contrast) %>%
@@ -294,12 +275,39 @@ tibble(nnz = nnz_log_contrast, testerr = testerr_log_contrast) %>%
 
 ![plot of chunk plot_slc_classification_testerr](plot_slc_classification_testerr-1.png)
 
+Fair selection changes which taxa enter the sparse log-contrast model. At the minimum cross-validation error, the unweighted model picks taxa with a much larger spread than the typical taxon with the standard-deviation weights the selected taxa are less extreme.
+
+
+``` r
+selected <- function(b) names(b)[b != 0]
+i_slc <- cvfit_log_contrast$cv$ibest
+i_fair <- cvfit_log_contrast_fair$cv[[1]]$ibest
+sel_slc <- selected(fit_log_contrast$beta[, i_slc])
+sel_fair <- selected(fit_log_contrast_fair[[1]]$beta[, i_fair])
+yhat_te_fair <- predict_trac(fit_log_contrast_fair, new_Z = zte)[[1]][, i_fair]
+tibble(model = c("sparse log-contrast", "sparse log-contrast, fair weights"),
+       selected_taxa = c(length(sel_slc), length(sel_fair)),
+       median_sd_of_selected = c(median(w_taxa[sel_slc]), median(w_taxa[sel_fair])),
+       test_error = c(mean(sign(yhat_te_log_contrast[[1]][, i_slc]) != yte),
+                      mean(sign(yhat_te_fair) != yte))) %>%
+  kable(digits = 2)
+```
+
+
+
+|model                             | selected_taxa| median_sd_of_selected| test_error|
+|:---------------------------------|-------------:|---------------------:|----------:|
+|sparse log-contrast               |             5|                  3.26|          0|
+|sparse log-contrast, fair weights |             3|                  2.64|          0|
+
+
+
 ## Reporting of Results
 
 The following code shows an example on how to extract the selected components based on the fitted trac object.
 
 
-```r
+``` r
 # define the different taxonomic ranks
 rank_names <- c("Kingdom",
                 "Phylum",
@@ -314,51 +322,36 @@ show_nonzeros <- function(x){
   enframe(x[x != 0]) %>%
     mutate(name = str_remove_all(name, "[a-z]__"),
            name = str_remove_all(name, "'")) %>%
-    separate(name, into = rank_names, sep = "::") %>%
+    separate(name, into = rank_names, sep = "::", fill = "right") %>%
     mutate(across(where(is.character), ~replace_na(.x, " "))) %>%
     arrange(value) %>%
     rename(alpha = value)
 }
 show_nonzeros(fit[[1]]$alpha[, cvfit$cv[[1]]$i1se]) %>%
   kable()
-#> Warning: Expected 7 pieces. Missing pieces filled with `NA` in 2 rows [1, 2].
 ```
 
-<table>
- <thead>
-  <tr>
-   <th style="text-align:left;"> Kingdom </th>
-   <th style="text-align:left;"> Phylum </th>
-   <th style="text-align:left;"> Class </th>
-   <th style="text-align:left;"> Order </th>
-   <th style="text-align:left;"> Family </th>
-   <th style="text-align:left;"> Genus </th>
-   <th style="text-align:left;"> Species </th>
-   <th style="text-align:right;"> alpha </th>
-  </tr>
- </thead>
-<tbody>
-  <tr>
-   <td style="text-align:left;"> Bacteria </td>
-   <td style="text-align:left;"> Firmicutes </td>
-   <td style="text-align:left;"> Clostridia </td>
-   <td style="text-align:left;"> Clostridiales </td>
-   <td style="text-align:left;"> Ruminococcaceae </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:right;"> -0.3666121 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Bacteria </td>
-   <td style="text-align:left;"> Firmicutes </td>
-   <td style="text-align:left;"> Clostridia </td>
-   <td style="text-align:left;"> Clostridiales </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:right;"> 0.3666121 </td>
-  </tr>
-</tbody>
-</table>
+
+
+|Kingdom  |Phylum         |Class       |Order         |Family          |Genus       |Species |       alpha|
+|:--------|:--------------|:-----------|:-------------|:---------------|:-----------|:-------|-----------:|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |                |            |        | -69.1706599|
+|Bacteria |Proteobacteria |            |              |                |            |        |  -3.4144062|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |Ruminococcaceae |            |        |  -1.8339628|
+|Bacteria |Bacteroidetes  |Bacteroidia |Bacteroidales |Bacteroidaceae  |            |        |  -0.5743973|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |Lachnospiraceae |Coprococcus |        |  -0.3839477|
+|Bacteria |Bacteroidetes  |Bacteroidia |Bacteroidales |                |            |        |  -0.3649045|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |Lachnospiraceae |            |        |  -0.1604407|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |Veillonellaceae |            |        |   0.2372019|
+|Bacteria |Tenericutes    |Mollicutes  |              |                |            |        |   0.3190155|
+|Bacteria |Firmicutes     |Clostridia  |Clostridiales |Clostridiaceae  |            |        |   0.6669931|
+|Bacteria |Firmicutes     |            |              |                |            |        |   9.2275209|
+|Bacteria |Firmicutes     |Clostridia  |              |                |            |        |  65.4519877|
+
+
+
+## Next steps
+
+To add the covariates age and sex to the model, to express it in terms of pairwise log-ratios with a second stage and to estimate the effects of these log-ratios on held-out data, continue with [trac-m2 for classification](trac-m2-classification.html).
 
 # References

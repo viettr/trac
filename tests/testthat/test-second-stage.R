@@ -82,7 +82,7 @@ test_that("two-stage sparse log contrast regression on simulated data", {
 })
 
 y <- 2*Z[, 1] - 2*Z[, p] + 3*Z[, 2] - 3*Z[, (p - 1)] + X[, 1] +
-  (as.numeric(X[, 2]) - 1) + rnorm(n)
+  2*(as.numeric(X[, 2]) - 1) + rnorm(n)
 y_classif <- sign(y)
 
 test_that("two-stage sparse log contrast regression on simulated data with
@@ -171,7 +171,7 @@ test_that("two-stage trac on simulated data", {
 
 # build y as the combination of column p + 2, p + 3, 1 and 2
 y <- 3*Z_mod[, (p + 2)] - 3*Z_mod[, (p + 3)] +
-  15*Z_mod[, 1] - 15*Z_mod[, 2] + X[, 1] + (as.numeric(X[, 2]) - 1) + rnorm(n)
+  15*Z_mod[, 1] - 15*Z_mod[, 2] + 5*X[, 1] + 10*(as.numeric(X[, 2]) - 1) + rnorm(n)
 # for classifcation take the sign --> values in c(-1, 1)
 y_classif <- sign(y)
 
@@ -186,7 +186,8 @@ test_that("two-stage trac on simulated data", {
     cv_trac(fit = fit_trac, Z = Z, A = A, y = y, additional_covariates = X)
   pre_selected <- fit_trac[[1]]$gamma[, reg_cv_trac$cv[[1]]$ibest]
   reg_two_stage <- second_stage(Z = Z, y = y, A = A, betas = pre_selected,
-                                additional_covariates = X)
+                                additional_covariates = X,
+                                criterion = "min")
   expect_true(all(reg_two_stage$log_ratios[c(
     "comp_1///comp_2", "comp_302///comp_303",
     "numeric_feature", "categorical_feature")] != 0))

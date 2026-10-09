@@ -6,14 +6,13 @@
 #' @param new_additional_covariates a new data matrix
 #'    (see \code{additional_covariates}
 #'    from \code{\link{sparse_log_contrast}})
-#' @param output string  either "raw", "probability" or "class" only relevant
+#' @param output string  either "raw" or "class" only relevant
 #'   classification tasks
 #' @return a vector of \code{nrow(new_Z)} predictions.
 #' @export
 predict_sparse_log_contrast <- function(fit, new_Z,
                                         new_additional_covariates = NULL,
-                                        output = c("raw", "probability",
-                                                   "class")) {
+                                        output = c("raw", "class")) {
   # fit: output of wag
   # new_Z: n_new by p matrix
   # new_additional_covariates: n_new by p' matrix
@@ -61,14 +60,6 @@ predict_sparse_log_contrast <- function(fit, new_Z,
     if (output == "class") {
       yhat <- yhat >= 0
       yhat <- yhat * 2 - 1
-    }
-    if (output == "probability") {
-      yhat <- probability_transform(
-        yhat = yhat,
-        A = fit$hyper_prob[1, ],
-        B = fit$hyper_prob[2, ]
-      )
-
     }
   }
 

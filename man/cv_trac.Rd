@@ -12,8 +12,7 @@ cv_trac(
   additional_covariates = NULL,
   folds = NULL,
   nfolds = 5,
-  summary_function = stats::median,
-  stratified = FALSE
+  summary_function = stats::median
 )
 }
 \arguments{
@@ -28,9 +27,6 @@ cv_trac(
 
 \item{summary_function}{how to combine the errors calculated on each
 observation within a fold (e.g. mean or median) (only for regression task)}
-
-\item{stratified}{if \code{TRUE} use stratified folds based on target variable
-only for classification. Default set to FALSE.}
 }
 \description{
 This function is to be called after calling \code{\link{trac}}.  It performs

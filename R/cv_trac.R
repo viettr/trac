@@ -11,27 +11,18 @@
 #' @param nfolds number of folds for cross-validation
 #' @param summary_function how to combine the errors calculated on each
 #' observation within a fold (e.g. mean or median) (only for regression task)
-#' @param stratified if `TRUE` use stratified folds based on target variable
-#'   only for classification. Default set to FALSE.
 #' @export
 cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
-                    nfolds = 5, summary_function = stats::median,
-                    stratified = FALSE) {
+                    nfolds = 5, summary_function = stats::median) {
   n <- nrow(Z)
   p <- ncol(Z)
   if (!is.null(additional_covariates) & !is.data.frame(additional_covariates)) {
     additional_covariates <- data.frame(additional_covariates)
   }
   stopifnot(length(y) == n)
-  if (is.null(folds)) {
-    if (stratified) {
-      folds <- make_folds_stratified(n, nfolds, y)
-    } else {
-      folds <- make_folds(n, nfolds)
-    }
-  } else {
-    nfolds <- length(folds)
-  }
+
+  if (is.null(folds)) folds <- make_folds(n, nfolds)
+  nfolds <- length(folds)
 
   cv <- list()
   fit_folds <- list() # save this to reuse by log-ratio's cv function
@@ -45,8 +36,14 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
       if (is.null(fit[[iw]]$w_additional_covariates)) {
         fit[[iw]]$w_additional_covariates <- NULL
       }
+      if (is.null(fit[[iw]]$limit_active)) {
+        fit[[iw]]$limit_active <- FALSE
+      }
+      if (is.null(fit[[iw]]$w_compositional)) {
+        fit[[iw]]$w_compositional <- NULL
+      }
       if (is.null(fit[[iw]]$rho)) fit[[iw]]$rho <- 0
-
+      if (is.null(fit[[iw]]$intercept)) fit[[iw]]$intercept <- TRUE
 
       # train on all but i-th fold (and use settings from fit):
       fit_folds[[i]] <- trac(Z = Z[-folds[[i]], ],
@@ -60,7 +57,9 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
                                fit[[iw]]$w_additional_covariates,
                              method = fit[[iw]]$method,
                              rho = fit[[iw]]$rho,
-                             normalized = fit[[iw]]$normalized)
+                             limit_active = fit[[iw]]$limit_active,
+                             w_compositional = fit[[iw]]$w_compositional,
+                             intercept = fit[[iw]]$intercept)
 
       if (fit[[iw]]$refit) {
         fit_folds[[i]] <- refit_trac(fit_folds[[i]], Z[-folds[[i]], ],
@@ -70,7 +69,7 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
         errs[, i] <- apply(
           (predict_trac(
             fit_folds[[i]],
-            Z[folds[[i]], ],
+            Z[folds[[i]],  , drop = FALSE],
             additional_covariates[folds[[i]], ])[[1]] - y[folds[[i]]])^2,
           2, summary_function
         )
@@ -79,10 +78,10 @@ cv_trac <- function(fit, Z, y, A, additional_covariates = NULL, folds = NULL,
       if (fit[[iw]]$method == "classif" |
           fit[[iw]]$method == "classif_huber") {
         # loss: max(0, 1 - y_hat * y)^2
-        er <- sign(predict_trac(fit_folds[[i]],
-                                Z[folds[[i]],],
-                                additional_covariates[folds[[i]],])[[1]]) !=
-          c(y[folds[[i]]])
+        yhat <- predict_trac(fit_folds[[i]],
+                             Z[folds[[i]], , drop = FALSE],
+                             additional_covariates[folds[[i]],])[[1]]
+        er <- ifelse(yhat >= 0, 1, -1) !=  c(y[folds[[i]]])
         errs[, i] <- colMeans(er)
       }
     }
@@ -117,35 +116,5 @@ make_folds <- function(n, nfolds) {
   folds <- list()
   for (i in seq(nfolds))
     folds[[i]] <- ii[seq(b[i] + 1, b[i + 1])]
-  folds
-}
-
-#' This function creates stratified folds for cross validation for unbalanced
-#' data. The code is adopted from ggb make_folds
-#'
-#' @param n number of observations
-#' @param nfolds number of folds
-#' @param y variable with group assignment.
-
-make_folds_stratified <- function(n, nfolds, y) {
-  # Check if number of folds is greater than the max n of observations
-  # per group. If the number is greater at least one fold will not contain
-  # any observations of group of interest.
-  max_n_y <- max(table(y))
-  nfolds <- min(nfolds, max_n_y)
-  # Initiate the list in advance
-  folds <- vector(mode = "list", length = nfolds)
-  for (j in unique(y)) {
-    ixs <- which(y == j)
-    nn <- round(length(ixs) / nfolds)
-    sizes <- rep(nn, nfolds)
-    sizes[nfolds] <- sizes[nfolds] + length(ixs) - nn * nfolds
-    b <- c(0, cumsum(sizes))
-    ii <- sample(length(ixs))
-    ii <- ixs[ii]
-    for (i in seq(nfolds)) {
-      folds[[i]] <- c(folds[[i]], ii[seq(b[i] + 1, b[i + 1])])
-    }
-  }
   folds
 }
